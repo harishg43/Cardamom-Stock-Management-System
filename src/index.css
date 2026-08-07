@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+:root {
+  font-family: 'Poppins', 'Segoe UI', 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #0f172a;
+  background-color: #f2fbff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: inherit;
+  background:
+    linear-gradient(180deg, rgba(4, 16, 12, 0.28), rgba(5, 21, 16, 0.34)),
+    url('/cardamom-new.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
