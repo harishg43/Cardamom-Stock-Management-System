@@ -21,6 +21,20 @@ Restart `npm run dev` after changing `.env`.
 
 For GitHub Pages, configure repository Actions variables/secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The included deployment workflow passes them into `npm run build`; Vite replaces them in the hosted JavaScript bundle.
 
+## Cloudflare Workers deployment
+
+The repository includes `wrangler.toml` and `.github/workflows/deploy-workers.yml`.
+Add these GitHub Actions secrets:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `VITE_APP_UPDATE_MANIFEST_URL` (optional)
+
+The workflow builds Vite with the Supabase values before deploying `dist` to the Worker.
+Run the workflow manually once from the Actions tab after adding the secrets.
+
 ## WhatsApp, SMS, and PDF setup
 
 1. Run both SQL migration files in the Supabase SQL editor:
