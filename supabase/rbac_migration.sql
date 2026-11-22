@@ -69,12 +69,6 @@ begin
     'USER'
   ));
 
-  if lower(coalesce(new.email, '')) = 'harishhari3291@gmail.com'
-     or lower(coalesce(new.email, '')) like '%harishhari3291%'
-     or lower(coalesce(new.email, '')) like '%harishharo3291%' then
-    requested_role := 'SUPER_ADMIN';
-  end if;
-
   if requested_role not in ('SUPER_ADMIN', 'ADMIN', 'USER') then
     requested_role := 'USER';
   end if;
@@ -137,9 +131,7 @@ select
   nullif(trim(coalesce(u.raw_user_meta_data->>'name', '')), ''),
   nullif(regexp_replace(coalesce(u.raw_user_meta_data->>'phone', ''), '\D', '', 'g'), ''),
   case
-    when lower(coalesce(u.email, '')) = 'harishhari3291@gmail.com'
-      or lower(coalesce(u.email, '')) like '%harishhari3291%'
-      or upper(coalesce(u.raw_app_meta_data->>'role', u.raw_user_meta_data->>'role', '')) = 'SUPER_ADMIN'
+    when upper(coalesce(u.raw_app_meta_data->>'role', u.raw_user_meta_data->>'role', '')) = 'SUPER_ADMIN'
       then 'SUPER_ADMIN'
     when upper(coalesce(u.raw_app_meta_data->>'role', u.raw_user_meta_data->>'role', '')) = 'ADMIN'
       then 'ADMIN'

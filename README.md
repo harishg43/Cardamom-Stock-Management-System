@@ -19,6 +19,39 @@ For local development, copy `.env.example` to `.env` and set:
 
 Restart `npm run dev` after changing `.env`.
 
+## Secure first Super Admin setup
+
+After running the RBAC migration and deploying the `manage-users` Edge Function,
+configure this server-only Supabase Edge Function secret:
+
+- `FIRST_SUPER_ADMIN_SETUP_SECRET`
+
+Choose a strong random value and keep it outside source control and outside
+the Vite frontend. Call the setup action once with the secret in the request
+header:
+
+```bash
+curl -X POST "$SUPABASE_URL/functions/v1/manage-users" \
+  -H "apikey: $SUPABASE_ANON_KEY" \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+  -H "x-setup-secret: $FIRST_SUPER_ADMIN_SETUP_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"setup","name":"Project Owner","email":"owner@example.com","password":"replace-with-a-strong-password"}'
+```
+
+The setup endpoint creates only one Super Admin and refuses all later setup calls.
+Admin and regular User accounts must be created through the authenticated app
+flow or the `manage-users` Edge Function. Do not add the setup secret or
+service-role key to Vite environment variables.
+
+## Database backup and reset
+
+Before any reset, run `supabase/backup_before_reset.sql` in the Supabase SQL
+editor and verify the `reset_backup_20261122` schema. The destructive
+`supabase/reset_after_confirmation.sql` script is disabled until the project
+owner explicitly confirms it. Do not run it without a complete backup and
+approval.
+
 For GitHub Pages, configure repository Actions variables/secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The included deployment workflow passes them into `npm run build`; Vite replaces them in the hosted JavaScript bundle.
 
 ## Cloudflare Workers deployment

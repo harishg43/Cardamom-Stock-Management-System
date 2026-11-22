@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import './App.css'
 import AddStock from './pages/AddStock'
 import StockMovement from './pages/StockMovement'
@@ -64,7 +63,7 @@ const translations = {
     totalSales: 'Total Sales',
     totalLabour: 'Total Labour Records',
     totalExpenses: 'Total Expenses',
-    mainAdminOnlyCreateAdmin: '403 Forbidden: Only Super Admin (harishhari3291@gmail.com) can create Admin accounts.',
+    mainAdminOnlyCreateAdmin: '403 Forbidden: Only Super Admin can create Admin accounts.',
     mainAdminNotice: 'Super Admin Access: Viewing all system records.',
     createUserNote: 'Create a user account with name, phone number, and password.',
     creating: 'Creating...',
@@ -192,7 +191,7 @@ const translations = {
     useAdminLogin: 'Use Admin Login for admin accounts.',
     userLoggedIn: 'User logged in successfully.',
     onlyAdminCreateAccounts: '403 Forbidden: Only Admin or Super Admin can create accounts.',
-    onlySuperAdminCreateAdmin: '403 Forbidden: Only Super Admin (harishhari3291@gmail.com) can create Admin accounts.',
+    onlySuperAdminCreateAdmin: '403 Forbidden: Only Super Admin can create Admin accounts.',
     superAdminRoleManual: '403 Forbidden: Super Admin role cannot be created manually.',
     cannotDeleteSelf: 'You cannot delete the account that is currently signed in.',
     cannotDeleteSuperAdmin: '403 Forbidden: The Super Admin account cannot be deleted.',
@@ -277,7 +276,7 @@ const translations = {
     totalSales: 'மொத்த விற்பனை',
     totalLabour: 'மொத்த தொழிலாளர் பதிவுகள்',
     totalExpenses: 'மொத்த செலவுகள்',
-    mainAdminOnlyCreateAdmin: '403 தடையானது: சூப்பர் நிர்வாகி (harishhari3291@gmail.com) மட்டுமே நிர்வாகி கணக்குகளை உருவாக்க முடியும்.',
+    mainAdminOnlyCreateAdmin: '403 தடையானது: சூப்பர் நிர்வாகி மட்டுமே நிர்வாகி கணக்குகளை உருவாக்க முடியும்.',
     mainAdminNotice: 'சூப்பர் நிர்வாகி அணுகல்: அனைத்து அமைப்புகளையும் பார்க்கிறீர்கள்.',
     createUserNote: 'பெயர், தொலைபேசி எண் மற்றும் கடவுச்சொல்லுடன் பயனர் கணக்கை உருவாக்கவும்.',
     creating: 'உருவாக்குகிறது...',
@@ -481,7 +480,7 @@ const translations = {
     totalSales: 'ആകെ വിൽപന',
     totalLabour: 'ആകെ തൊഴിലാളി റെക്കോർഡുകൾ',
     totalExpenses: 'ആകെ ചെലവുകൾ',
-    mainAdminOnlyCreateAdmin: '403 നിരോധിച്ചിരിക്കുന്നു: സൂപ്പർ അഡ്മിന് (harishhari3291@gmail.com) മാത്രമേ അഡ്മിൻ അക്കൗണ്ടുകൾ സൃഷ്ടിക്കാൻ കഴിയൂ.',
+    mainAdminOnlyCreateAdmin: '403 നിരോധിച്ചിരിക്കുന്നു: സൂപ്പർ അഡ്മിൻ മാത്രമേ അഡ്മിൻ അക്കൗണ്ടുകൾ സൃഷ്തിക്കാൻ കഴിയൂ.',
     mainAdminNotice: 'സൂപ്പർ അഡ്മിൻ പ്രവേശനം: എല്ലാ സിസ്റ്റം റെക്കോർഡുകളും കാണുന്നു.',
     createUserNote: 'പേര്, ഫോൺ നമ്പർ, പാസ്‌വേഡ് ഉപയോഗിച്ച് ഒരു ഉപയോക്തൃ അക്കൗണ്ട് സൃഷ്ടിക്കുക.',
     creating: 'സൃഷ്ടിക്കുന്നു...',
@@ -740,8 +739,6 @@ function App() {
   const [roundLoading, setRoundLoading] = useState(false)
   const [hasRoundNumberColumn, setHasRoundNumberColumn] = useState(true)
 
-  const SUPER_ADMIN_EMAIL = 'harishhari3291@gmail.com'
-
   const userRole = useMemo(() => {
     if (!user) {
       return 'GUEST'
@@ -749,15 +746,8 @@ function App() {
     if (profile?.role) {
       return String(profile.role).toUpperCase()
     }
-    const email = String(user.email ?? user.user_metadata?.email ?? '').toLowerCase().trim()
     const roleMeta = String(user.app_metadata?.role ?? user.user_metadata?.role ?? '').toUpperCase()
-
-    if (
-      email === SUPER_ADMIN_EMAIL.toLowerCase() ||
-      email.includes('harishhari3291') ||
-      email.includes('harishharo3291') ||
-      roleMeta === 'SUPER_ADMIN'
-    ) {
+    if (roleMeta === 'SUPER_ADMIN') {
       return 'SUPER_ADMIN'
     }
 
@@ -1101,9 +1091,8 @@ function App() {
     if (error) {
       setAuthMessage(error.message)
     } else {
-      const emailLower = String(data.user?.email ?? '').toLowerCase()
       const role = getRole(data.user)
-      if (!emailLower.includes('harishhari3291') && !emailLower.includes('harishharo3291') && role !== 'super_admin') {
+      if (role !== 'super_admin') {
         await supabase.auth.signOut()
         setAuthMessage(t('notSuperAdmin'))
       } else {
@@ -1352,33 +1341,14 @@ function App() {
     setCreateUserLoading(true)
     setCreateUserMessage('')
 
-    const transientSupabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      },
-    )
-
     const targetRole = requestedRole === 'ADMIN' ? 'ADMIN' : 'USER'
-    const userEmail = userEmailFromPhone(phone)
-    const currentUserId = user?.id ?? 'super_admin'
-
-    const { error } = await transientSupabase.auth.signUp({
-      email: userEmail,
-      password,
-      options: {
-        data: {
-          name,
-          phone,
-          role: targetRole,
-          created_by: currentUserId,
-          created_by_email: user?.email ?? '',
-        },
+    const { data: created, error } = await supabase.functions.invoke('manage-users', {
+      body: {
+        action: 'create',
+        name,
+        phone,
+        password,
+        role: targetRole,
       },
     })
 
@@ -1387,8 +1357,13 @@ function App() {
       setCreateUserLoading(false)
       return
     }
+    if (created?.error) {
+      setCreateUserMessage(`Create account failed: ${created.error}`)
+      setCreateUserLoading(false)
+      return
+    }
 
-    const creatorKey = `created_by_${currentUserId}`
+    const creatorKey = `created_by_${user?.id ?? 'unknown'}`
     try {
       const existingCreated = JSON.parse(localStorage.getItem(creatorKey) || '[]')
       if (!existingCreated.includes(phone)) {
@@ -1400,7 +1375,7 @@ function App() {
         name,
         phone,
         role: targetRole,
-        created_by: currentUserId,
+        created_by: user?.id ?? 'unknown',
         created_at: new Date().toISOString(),
       }
       localStorage.setItem('rb_users_map', JSON.stringify(globalUsersMap))
@@ -2646,7 +2621,7 @@ function App() {
                     onChange={(event) =>
                       setSuperAdminLogin((previous) => ({ ...previous, email: event.target.value }))
                     }
-                    placeholder="harishhari3291@gmail.com"
+                    placeholder="owner@example.com"
                   />
                 </label>
                 <label>
