@@ -1388,7 +1388,20 @@ function App() {
     })
 
     if (error) {
-      setCreateUserMessage(`Create account failed: ${error.message}`)
+      const detail =
+        error.context && typeof error.context === 'object'
+          ? await error.context.text?.().catch(() => '')
+          : ''
+      const lowerMessage = String(error.message ?? '').toLowerCase()
+      if (lowerMessage.includes('failed to send') || lowerMessage.includes('fetch')) {
+        setCreateUserMessage(
+          'Create account failed: The manage-users Edge Function is not reachable. Verify it is deployed and VITE_SUPABASE_URL points to this Supabase project.',
+        )
+      } else if (detail) {
+        setCreateUserMessage(`Create account failed: ${detail}`)
+      } else {
+        setCreateUserMessage(`Create account failed: ${error.message}`)
+      }
       setCreateUserLoading(false)
       return
     }

@@ -21,6 +21,23 @@ Restart `npm run dev` after changing `.env`.
 
 ## Secure first Super Admin setup
 
+## Deploy the manage-users Edge Function
+
+Link and deploy the function from the project directory:
+
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy manage-users --no-verify-jwt
+```
+
+Set these secrets in **Supabase Dashboard → Edge Functions → manage-users → Secrets**:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FIRST_SUPER_ADMIN_SETUP_SECRET`
+
+Do not put either secret in Vite variables or repository files.
+
 After running the RBAC migration and deploying the `manage-users` Edge Function,
 configure this server-only Supabase Edge Function secret:
 
