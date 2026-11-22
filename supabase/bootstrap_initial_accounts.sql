@@ -105,3 +105,26 @@ $$;
 --   '9961153291@user.local'
 -- )
 -- order by u.email;
+
+-- Emergency Super Admin repair for harishhari3291@gmail.com.
+-- Run this separately if the account profile is missing or still shows USER.
+--
+-- update auth.users
+-- set raw_app_meta_data =
+--   coalesce(raw_app_meta_data, '{}'::jsonb)
+--   || jsonb_build_object('role', 'SUPER_ADMIN'),
+--     raw_user_meta_data =
+--   coalesce(raw_user_meta_data, '{}'::jsonb)
+--   || jsonb_build_object('name', 'Harish', 'role', 'SUPER_ADMIN')
+-- where lower(email) = 'harishhari3291@gmail.com';
+--
+-- insert into public.profiles (id, name, phone, role, active, created_by)
+-- select id, 'Harish', null, 'SUPER_ADMIN', true, null
+-- from auth.users
+-- where lower(email) = 'harishhari3291@gmail.com'
+-- on conflict (id) do update set
+--   name = 'Harish',
+--   role = 'SUPER_ADMIN',
+--   active = true,
+--   created_by = null,
+--   updated_at = now();

@@ -1083,9 +1083,14 @@ function App() {
       .select('role,active')
       .eq('id', authUser.id)
       .maybeSingle()
-    if (error) return ''
-    if (data?.active === false) return 'inactive'
-    return String(data?.role ?? '').toLowerCase()
+    if (!error && data?.active === false) return 'inactive'
+    if (!error && data?.role) return String(data.role).toLowerCase()
+
+    const authRole = String(authUser.app_metadata?.role ?? '').toUpperCase()
+    if (authRole === 'SUPER_ADMIN') return 'super_admin'
+    if (authRole === 'ADMIN') return 'admin'
+    if (authRole === 'USER') return 'user'
+    return ''
   }
 
   const handleSuperAdminSignIn = async (event) => {
