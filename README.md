@@ -28,8 +28,25 @@ Link and deploy the function from the project directory:
 ```bash
 npx supabase login
 npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase functions deploy manage-users --no-verify-jwt
+npx supabase functions deploy manage-users
 ```
+
+The function verifies the caller itself, so it does not need Supabase gateway
+JWT verification. The local `supabase/config.toml` sets `verify_jwt = false`.
+
+Check deployment and configuration:
+
+```bash
+curl -i -X OPTIONS "https://YOUR_PROJECT_REF.supabase.co/functions/v1/manage-users"
+curl -i -X POST "https://YOUR_PROJECT_REF.supabase.co/functions/v1/manage-users" \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"invalid"}'
+```
+
+An HTTP 404 means the function is not deployed to that project. HTTP 401/403
+means the function is reachable; use the app message or Edge Function logs to
+resolve authentication or role configuration.
 
 Set these secrets in **Supabase Dashboard → Edge Functions → manage-users → Secrets**:
 
