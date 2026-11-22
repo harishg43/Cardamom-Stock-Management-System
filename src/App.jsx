@@ -4,6 +4,7 @@ import './App.css'
 import AddStock from './pages/AddStock'
 import StockMovement from './pages/StockMovement'
 import StockList from './pages/StockList'
+import ReportsPage from './components/ReportsPage'
 import { isSupabaseConfigured, supabase } from './services/supabaseClient'
 
 const translations = {
@@ -165,6 +166,60 @@ const translations = {
     latestVersion: 'Latest version',
     updateNoUninstall: 'Update installs over your existing app. No uninstall needed.',
     updateConfigMissing: 'Set VITE_APP_UPDATE_MANIFEST_URL to a public HTTPS update JSON URL.',
+    createAdmin: 'Create Admin',
+    deleteUserOrAdmin: 'Delete User or Admin',
+    deleteSuperAdminAccountsNote: 'Super Admin can delete both User and Admin accounts. The Super Admin account cannot be deleted.',
+    deleteAssignedAccountsNote: 'You can delete only accounts assigned to you.',
+    status: 'Status',
+    activate: 'Activate',
+    deactivate: 'Deactivate',
+    adminAccounts: 'Admin Accounts',
+    userAccounts: 'User Accounts',
+    accountInactive: 'This account is inactive.',
+    ownershipMigrationPending: 'Ownership migration is pending. Existing stock records loaded in compatibility mode.',
+    accountStatusOnlyAdmin: 'Only Admin or Super Admin can change account status.',
+    onlySuperAdminStatus: '403 Forbidden: Only Super Admin can change ADMIN account status.',
+    accountActivated: 'Account activated successfully.',
+    accountDeactivated: 'Account deactivated successfully.',
+    deleteAccountConfirm: 'Delete account?',
+    superAdminLoginRequired: 'Super Admin login requires Gmail address and password.',
+    notSuperAdmin: 'This account is not Super Admin. Please use Admin or User Login.',
+    superAdminLoggedIn: 'Super Admin logged in successfully.',
+    adminLoginRequired: 'Admin login requires name, phone number, and password.',
+    notAdmin: 'This account is not Admin. Please use User Login.',
+    adminLoggedIn: 'Admin logged in successfully.',
+    userLoginRequired: 'User login requires name, phone and password.',
+    useAdminLogin: 'Use Admin Login for admin accounts.',
+    userLoggedIn: 'User logged in successfully.',
+    onlyAdminCreateAccounts: '403 Forbidden: Only Admin or Super Admin can create accounts.',
+    onlySuperAdminCreateAdmin: '403 Forbidden: Only Super Admin (harishhari3291@gmail.com) can create Admin accounts.',
+    superAdminRoleManual: '403 Forbidden: Super Admin role cannot be created manually.',
+    cannotDeleteSelf: 'You cannot delete the account that is currently signed in.',
+    cannotDeleteSuperAdmin: '403 Forbidden: The Super Admin account cannot be deleted.',
+    onlySuperAdminDeleteAdmin: '403 Forbidden: Only Super Admin can delete ADMIN accounts.',
+    deleteAccountFailed: 'Delete account failed',
+    databaseAccessFailed: 'Database access failed',
+    stockOutTooLarge: 'Stock out cannot be greater than available stock.',
+    onlyAdminEdit: 'Only admin can edit stock entries.',
+    onlyAdminDelete: 'Only admin can delete stock entries.',
+    onlyAdminReports: 'Only admin can manage round reports.',
+    supabaseNotConfigured: 'Supabase is not configured.',
+    customerPhoneColumnMissing: 'Database load failed: add customer_phone column using SQL -> alter table public.stocks add column if not exists customer_phone text;',
+    databaseConnectionFailed: 'Database connection failed. Check internet access, Supabase project status, and VITE_SUPABASE_URL.',
+    adminPhoneValidation: 'Admin phone number must be exactly 10 digits.',
+    userPhoneValidation: 'User phone number must be exactly 10 digits.',
+    requiredAccountFields: 'Name, phone, and password are required.',
+    accountCreateFailed: 'Create account failed',
+    accountCreated: 'Account created successfully',
+    onlyAdminDeleteUsers: 'Only admin can delete users.',
+    deleteNamePhoneRequired: 'Name and phone are required to delete user.',
+    deletePhoneValidation: 'User phone number must be exactly 10 digits.',
+    accountDeletedBlocked: 'User account deleted and access blocked',
+    updateFailed: 'Update failed',
+    insertFailed: 'Insert failed',
+    stockMovementFailed: 'Stock movement failed',
+    deleteFailed: 'Delete failed',
+    startDateRequired: 'is required.',
   },
   ta: {
     appTitle: 'குருசாமி ஏலக்காய்',
@@ -315,6 +370,60 @@ const translations = {
     noActiveUsers: 'இப்போது எந்த பயனருக்கும் செயலில் சுற்று இல்லை.',
     reportHistory: 'அறிக்கை வரலாறு',
     noReportHistory: 'இந்த நபருக்கான அறிக்கை வரலாறு இன்னும் இல்லை.',
+    createAdmin: 'நிர்வாகியை உருவாக்கு',
+    deleteUserOrAdmin: 'பயனர் அல்லது நிர்வாகியை நீக்கு',
+    deleteSuperAdminAccountsNote: 'சூப்பர் நிர்வாகி பயனர் மற்றும் நிர்வாகி கணக்குகளை நீக்கலாம். சூப்பர் நிர்வாகி கணக்கை நீக்க முடியாது.',
+    deleteAssignedAccountsNote: 'உங்களுக்கு ஒதுக்கப்பட்ட கணக்குகளை மட்டுமே நீக்கலாம்.',
+    status: 'நிலை',
+    activate: 'செயல்படுத்து',
+    deactivate: 'முடக்கு',
+    adminAccounts: 'நிர்வாகி கணக்குகள்',
+    userAccounts: 'பயனர் கணக்குகள்',
+    accountInactive: 'இந்த கணக்கு செயலற்றது.',
+    ownershipMigrationPending: 'உரிமை மாற்றம் நிலுவையில் உள்ளது. தற்போதுள்ள சரக்கு பதிவுகள் இணக்கமான முறையில் ஏற்றப்பட்டன.',
+    accountStatusOnlyAdmin: 'நிர்வாகி அல்லது சூப்பர் நிர்வாகி மட்டுமே கணக்கு நிலையை மாற்ற முடியும்.',
+    onlySuperAdminStatus: '403 தடை: சூப்பர் நிர்வாகி மட்டுமே நிர்வாகி கணக்கு நிலையை மாற்ற முடியும்.',
+    accountActivated: 'கணக்கு வெற்றிகரமாக செயல்படுத்தப்பட்டது.',
+    accountDeactivated: 'கணக்கு வெற்றிகரமாக முடக்கப்பட்டது.',
+    deleteAccountConfirm: 'கணக்கை நீக்க வேண்டுமா?',
+    superAdminLoginRequired: 'சூப்பர் நிர்வாகி உள்நுழைவுக்கு ஜிமெயில் முகவரி மற்றும் கடவுச்சொல் தேவை.',
+    notSuperAdmin: 'இந்த கணக்கு சூப்பர் நிர்வாகி அல்ல. நிர்வாகி அல்லது பயனர் உள்நுழைவை பயன்படுத்தவும்.',
+    superAdminLoggedIn: 'சூப்பர் நிர்வாகி வெற்றிகரமாக உள்நுழைந்தார்.',
+    adminLoginRequired: 'நிர்வாகி உள்நுழைவுக்கு பெயர், தொலைபேசி எண் மற்றும் கடவுச்சொல் தேவை.',
+    notAdmin: 'இந்த கணக்கு நிர்வாகி அல்ல. பயனர் உள்நுழைவை பயன்படுத்தவும்.',
+    adminLoggedIn: 'நிர்வாகி வெற்றிகரமாக உள்நுழைந்தார்.',
+    userLoginRequired: 'பயனர் உள்நுழைவுக்கு பெயர், தொலைபேசி எண் மற்றும் கடவுச்சொல் தேவை.',
+    useAdminLogin: 'நிர்வாகி கணக்குகளுக்கு நிர்வாகி உள்நுழைவை பயன்படுத்தவும்.',
+    userLoggedIn: 'பயனர் வெற்றிகரமாக உள்நுழைந்தார்.',
+    onlyAdminCreateAccounts: '403 தடை: நிர்வாகி அல்லது சூப்பர் நிர்வாகி மட்டுமே கணக்குகளை உருவாக்க முடியும்.',
+    onlySuperAdminCreateAdmin: '403 தடை: சூப்பர் நிர்வாகி மட்டுமே நிர்வாகி கணக்குகளை உருவாக்க முடியும்.',
+    superAdminRoleManual: '403 தடை: சூப்பர் நிர்வாகி பங்கை கைமுறையாக உருவாக்க முடியாது.',
+    cannotDeleteSelf: 'தற்போது உள்நுழைந்த கணக்கை நீக்க முடியாது.',
+    cannotDeleteSuperAdmin: '403 தடை: சூப்பர் நிர்வாகி கணக்கை நீக்க முடியாது.',
+    onlySuperAdminDeleteAdmin: '403 தடை: சூப்பர் நிர்வாகி மட்டுமே நிர்வாகி கணக்குகளை நீக்க முடியும்.',
+    deleteAccountFailed: 'கணக்கு நீக்குதல் தோல்வி',
+    databaseAccessFailed: 'தரவுத்தள அணுகல் தோல்வி',
+    stockOutTooLarge: 'சரக்கு வெளியேற்றம் கிடைக்கும் சரக்கை விட அதிகமாக இருக்கக்கூடாது.',
+    onlyAdminEdit: 'நிர்வாகி மட்டுமே சரக்கு பதிவுகளை திருத்த முடியும்.',
+    onlyAdminDelete: 'நிர்வாகி மட்டுமே சரக்கு பதிவுகளை நீக்க முடியும்.',
+    onlyAdminReports: 'நிர்வாகி மட்டுமே சுற்று அறிக்கைகளை நிர்வகிக்க முடியும்.',
+    supabaseNotConfigured: 'Supabase அமைக்கப்படவில்லை.',
+    customerPhoneColumnMissing: 'தரவுத்தளத்தில் customer_phone பத்தி இல்லை: alter table public.stocks add column if not exists customer_phone text;',
+    databaseConnectionFailed: 'தரவுத்தள இணைப்பு தோல்வி. இணையம், Supabase திட்ட நிலை மற்றும் VITE_SUPABASE_URL சரிபார்க்கவும்.',
+    adminPhoneValidation: 'நிர்வாகி தொலைபேசி எண் சரியாக 10 இலக்கங்களாக இருக்க வேண்டும்.',
+    userPhoneValidation: 'பயனர் தொலைபேசி எண் சரியாக 10 இலக்கங்களாக இருக்க வேண்டும்.',
+    requiredAccountFields: 'பெயர், தொலைபேசி எண் மற்றும் கடவுச்சொல் தேவை.',
+    accountCreateFailed: 'கணக்கு உருவாக்கம் தோல்வி',
+    accountCreated: 'கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது',
+    onlyAdminDeleteUsers: 'நிர்வாகி மட்டுமே பயனர்களை நீக்க முடியும்.',
+    deleteNamePhoneRequired: 'நீக்க பெயர் மற்றும் தொலைபேசி எண் தேவை.',
+    deletePhoneValidation: 'பயனர் தொலைபேசி எண் சரியாக 10 இலக்கங்களாக இருக்க வேண்டும்.',
+    accountDeletedBlocked: 'பயனர் கணக்கு நீக்கப்பட்டு அணுகல் தடுக்கப்பட்டது',
+    updateFailed: 'புதுப்பித்தல் தோல்வி',
+    insertFailed: 'சேர்த்தல் தோல்வி',
+    stockMovementFailed: 'சரக்கு மாற்றம் தோல்வி',
+    deleteFailed: 'நீக்குதல் தோல்வி',
+    startDateRequired: 'தேவை.',
   },
   ml: {
     appTitle: 'ഗുരുസാമി ഏലക്കായ്',
@@ -465,11 +574,70 @@ const translations = {
     noActiveUsers: 'ഇപ്പോൾ ഒരു ഉപയോക്താവിനും സജീവ റൗണ്ട് ഇല്ല.',
     reportHistory: 'റിപ്പോർട്ട് ചരിത്രം',
     noReportHistory: 'ഈ വ്യക്തിക്കായി ഇതുവരെ റിപ്പോർട്ട് ചരിത്രം ലഭ്യമല്ല.',
+    createAdmin: 'അഡ്മിൻ സൃഷ്ടിക്കുക',
+    deleteUserOrAdmin: 'ഉപയോക്താവോ അഡ്മിനോ നീക്കം ചെയ്യുക',
+    deleteSuperAdminAccountsNote: 'സൂപ്പർ അഡ്മിന് ഉപയോക്താക്കളെയും അഡ്മിനുകളെയും നീക്കം ചെയ്യാം. സൂപ്പർ അഡ്മിൻ അക്കൗണ്ട് നീക്കം ചെയ്യാനാകില്ല.',
+    deleteAssignedAccountsNote: 'നിങ്ങൾക്ക് കൈമാറിയ അക്കൗണ്ടുകൾ മാത്രമേ നീക്കം ചെയ്യാൻ കഴിയൂ.',
+    status: 'സ്ഥിതി',
+    activate: 'സജീവമാക്കുക',
+    deactivate: 'നിഷ്ക്രിയമാക്കുക',
+    adminAccounts: 'അഡ്മിൻ അക്കൗണ്ടുകൾ',
+    userAccounts: 'ഉപയോക്തൃ അക്കൗണ്ടുകൾ',
+    accountInactive: 'ഈ അക്കൗണ്ട് നിഷ്ക്രിയമാണ്.',
+    ownershipMigrationPending: 'ഉടമസ്ഥത മാറ്റം നടക്കേണ്ടതുണ്ട്. നിലവിലുള്ള സ്റ്റോക്ക് രേഖകൾ അനുയോജ്യ രീതിയിൽ ലോഡ് ചെയ്തു.',
+    accountStatusOnlyAdmin: 'അഡ്മിനോ സൂപ്പർ അഡ്മിനോ മാത്രമേ അക്കൗണ്ട് സ്ഥിതി മാറ്റാൻ കഴിയൂ.',
+    onlySuperAdminStatus: '403 Forbidden: സൂപ്പർ അഡ്മിൻ മാത്രമേ അഡ്മിൻ അക്കൗണ്ട് സ്ഥിതി മാറ്റാൻ കഴിയൂ.',
+    accountActivated: 'അക്കൗണ്ട് വിജയകരമായി സജീവമാക്കി.',
+    accountDeactivated: 'അക്കൗണ്ട് വിജയകരമായി നിഷ്ക്രിയമാക്കി.',
+    deleteAccountConfirm: 'അക്കൗണ്ട് നീക്കം ചെയ്യണോ?',
+    superAdminLoginRequired: 'സൂപ്പർ അഡ്മിൻ ലോഗിനിന് ജിമെയിൽ വിലാസവും പാസ്‌വേഡും ആവശ്യമാണ്.',
+    notSuperAdmin: 'ഈ അക്കൗണ്ട് സൂപ്പർ അഡ്മിൻ അല്ല. അഡ്മിൻ അല്ലെങ്കിൽ യൂസർ ലോഗിൻ ഉപയോഗിക്കുക.',
+    superAdminLoggedIn: 'സൂപ്പർ അഡ്മിൻ വിജയകരമായി ലോഗിൻ ചെയ്തു.',
+    adminLoginRequired: 'അഡ്മിൻ ലോഗിനിന് പേര്, ഫോൺ നമ്പർ, പാസ്‌വേഡ് ആവശ്യമാണ്.',
+    notAdmin: 'ഈ അക്കൗണ്ട് അഡ്മിൻ അല്ല. യൂസർ ലോഗിൻ ഉപയോഗിക്കുക.',
+    adminLoggedIn: 'അഡ്മിൻ വിജയകരമായി ലോഗിൻ ചെയ്തു.',
+    userLoginRequired: 'ഉപയോക്തൃ ലോഗിനിന് പേര്, ഫോൺ നമ്പർ, പാസ്‌വേഡ് ആവശ്യമാണ്.',
+    useAdminLogin: 'അഡ്മിൻ അക്കൗണ്ടുകൾക്ക് അഡ്മിൻ ലോഗിൻ ഉപയോഗിക്കുക.',
+    userLoggedIn: 'ഉപയോക്താവ് വിജയകരമായി ലോഗിൻ ചെയ്തു.',
+    onlyAdminCreateAccounts: '403 Forbidden: അഡ്മിനോ സൂപ്പർ അഡ്മിനോ മാത്രമേ അക്കൗണ്ടുകൾ സൃഷ്ടിക്കാൻ കഴിയൂ.',
+    onlySuperAdminCreateAdmin: '403 Forbidden: സൂപ്പർ അഡ്മിൻ മാത്രമേ അഡ്മിൻ അക്കൗണ്ടുകൾ സൃഷ്ടിക്കാൻ കഴിയൂ.',
+    superAdminRoleManual: '403 Forbidden: സൂപ്പർ അഡ്മിൻ роль കൈയാൽ സൃഷ്ടിക്കാൻ കഴിയില്ല.',
+    cannotDeleteSelf: 'ഇപ്പോൾ ലോഗിൻ ചെയ്ത അക്കൗണ്ട് നീക്കം ചെയ്യാനാകില്ല.',
+    cannotDeleteSuperAdmin: '403 Forbidden: സൂപ്പർ അഡ്മിൻ അക്കൗണ്ട് നീക്കം ചെയ്യാനാകില്ല.',
+    onlySuperAdminDeleteAdmin: '403 Forbidden: സൂപ്പർ അഡ്മിൻ മാത്രമേ അഡ്മിൻ അക്കൗണ്ടുകൾ നീക്കം ചെയ്യാൻ കഴിയൂ.',
+    deleteAccountFailed: 'അക്കൗണ്ട് നീക്കം ചെയ്യൽ പരാജയപ്പെട്ടു',
+    databaseAccessFailed: 'ഡാറ്റാബേസ് പ്രവേശനം പരാജയപ്പെട്ടു',
+    stockOutTooLarge: 'സ്റ്റോക്ക് ഔട്ട് ലഭ്യമായ സ്റ്റോക്കിനേക്കാൾ കൂടുതലാകരുത്.',
+    onlyAdminEdit: 'അഡ്മിൻ മാത്രമേ സ്റ്റോക്ക് എൻട്രികൾ എഡിറ്റ് ചെയ്യാൻ കഴിയൂ.',
+    onlyAdminDelete: 'അഡ്മിൻ മാത്രമേ സ്റ്റോക്ക് എൻട്രികൾ നീക്കം ചെയ്യാൻ കഴിയൂ.',
+    onlyAdminReports: 'അഡ്മിൻ മാത്രമേ റൗണ്ട് റിപ്പോർട്ടുകൾ നിയന്ത്രിക്കാൻ കഴിയൂ.',
+    supabaseNotConfigured: 'Supabase ക്രമീകരിച്ചിട്ടില്ല.',
+    customerPhoneColumnMissing: 'ഡാറ്റാബേസിൽ customer_phone കോളം ഇല്ല: alter table public.stocks add column if not exists customer_phone text;',
+    databaseConnectionFailed: 'ഡാറ്റാബേസ് കണക്ഷൻ പരാജയപ്പെട്ടു. ഇന്റർനെറ്റ്, Supabase പ്രോജക്ട് സ്ഥിതി, VITE_SUPABASE_URL പരിശോധിക്കുക.',
+    adminPhoneValidation: 'അഡ്മിൻ ഫോൺ നമ്പർ കൃത്യമായി 10 അക്കമായിരിക്കണം.',
+    userPhoneValidation: 'ഉപയോക്തൃ ഫോൺ നമ്പർ കൃത്യമായി 10 അക്കമായിരിക്കണം.',
+    requiredAccountFields: 'പേര്, ഫോൺ നമ്പർ, പാസ്‌വേഡ് ആവശ്യമാണ്.',
+    accountCreateFailed: 'അക്കൗണ്ട് സൃഷ്ടിക്കൽ പരാജയപ്പെട്ടു',
+    accountCreated: 'അക്കൗണ്ട് വിജയകരമായി സൃഷ്ടിച്ചു',
+    onlyAdminDeleteUsers: 'അഡ്മിൻ മാത്രമേ ഉപയോക്താക്കളെ നീക്കം ചെയ്യാൻ കഴിയൂ.',
+    deleteNamePhoneRequired: 'നീക്കം ചെയ്യാൻ പേര് ಮತ್ತು ഫോൺ നമ്പർ ആവശ്യമാണ്.',
+    deletePhoneValidation: 'ഉപയോക്തൃ ഫോൺ നമ്പർ കൃത്യമായി 10 അക്കമായിരിക്കണം.',
+    accountDeletedBlocked: 'ഉപയോക്തൃ അക്കൗണ്ട് നീക്കം ചെയ്ത് പ്രവേശനം തടഞ്ഞു',
+    updateFailed: 'അപ്‌ഡേറ്റ് പരാജയപ്പെട്ടു',
+    insertFailed: 'ചേർക്കൽ പരാജയപ്പെട്ടു',
+    stockMovementFailed: 'സ്റ്റോക്ക് മൂവ്‌മെന്റ് പരാജയപ്പെട്ടു',
+    deleteFailed: 'നീക്കം ചെയ്യൽ പരാജയപ്പെട്ടു',
+    startDateRequired: 'ആവശ്യമാണ്.',
   },
 }
 
 function App() {
-  const [language, setLanguage] = useState('en')
+  const getStoredLanguage = () => {
+    const stored = localStorage.getItem('cardamom_language_guest')
+    return stored === 'ta' || stored === 'ml' ? stored : 'en'
+  }
+
+  const [language, setLanguageState] = useState(getStoredLanguage)
   const t = (key) => translations[language]?.[key] ?? translations.en[key] ?? key
 
   const formatRatio = (value) => {
@@ -505,6 +673,18 @@ function App() {
   const [stocks, setStocks] = useState([])
   const [editId, setEditId] = useState(null)
   const [user, setUser] = useState(null)
+  const setLanguage = useCallback((nextLanguage) => {
+    const normalizedLanguage = ['en', 'ta', 'ml'].includes(nextLanguage)
+      ? nextLanguage
+      : 'en'
+    setLanguageState(normalizedLanguage)
+    localStorage.setItem(
+      user?.id ? `cardamom_language_${user.id}` : 'cardamom_language_guest',
+      normalizedLanguage,
+    )
+  }, [user])
+  const [profile, setProfile] = useState(null)
+  const [managedAccounts, setManagedAccounts] = useState([])
   const [superAdminLogin, setSuperAdminLogin] = useState({
     email: '',
     password: '',
@@ -566,6 +746,9 @@ function App() {
     if (!user) {
       return 'GUEST'
     }
+    if (profile?.role) {
+      return String(profile.role).toUpperCase()
+    }
     const email = String(user.email ?? user.user_metadata?.email ?? '').toLowerCase().trim()
     const roleMeta = String(user.app_metadata?.role ?? user.user_metadata?.role ?? '').toUpperCase()
 
@@ -583,11 +766,10 @@ function App() {
     }
 
     return 'USER'
-  }, [user])
+  }, [user, profile])
 
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN'
-  const isUserOnly = userRole === 'USER'
   const isMainAdmin = isSuperAdmin
 
   useEffect(() => {
@@ -621,6 +803,57 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!supabase || !user) {
+      setProfile(null)
+      setManagedAccounts([])
+      return
+    }
+
+    const accountLanguage = localStorage.getItem(`cardamom_language_${user.id}`)
+    if (accountLanguage === 'en' || accountLanguage === 'ta' || accountLanguage === 'ml') {
+      setLanguageState(accountLanguage)
+    }
+
+    const loadProfileAndAccounts = async () => {
+      const { data: ownProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id,name,phone,role,active,created_by')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        setDbMessage(`Database access failed: ${profileError.message}`)
+        return
+      }
+
+      setProfile(ownProfile)
+
+      if (ownProfile?.active === false) {
+        await supabase.auth.signOut()
+        setAuthMessage(t('accountInactive'))
+        return
+      }
+
+      let accountsQuery = supabase
+        .from('profiles')
+        .select('id,name,phone,role,active,created_by,whatsapp_consent,sms_consent')
+        .order('name', { ascending: true })
+
+      if (ownProfile?.role === 'ADMIN') {
+        accountsQuery = accountsQuery.eq('created_by', user.id)
+      }
+
+      const { data: accounts, error: accountsError } = await accountsQuery
+
+      if (!accountsError) {
+        setManagedAccounts(accounts ?? [])
+      }
+    }
+
+    loadProfileAndAccounts()
+  }, [user])
+
   const mapDbRowToStock = (row) => ({
     id: row.id,
     customerName: normalizePersonName(row.customer_name),
@@ -632,6 +865,9 @@ function App() {
     availableStock: Number(row.available_stock),
     stockReason: row.stock_reason ?? '',
     userId: row.user_id ?? '',
+    ownerId: row.owner_id ?? '',
+    adminId: row.admin_id ?? '',
+    createdBy: row.created_by ?? '',
   })
 
   const loadStocks = useCallback(async () => {
@@ -641,17 +877,46 @@ function App() {
 
     setDbLoading(true)
     setDbMessage('')
+    let data = null
+    let error = null
 
-    let query = supabase
-      .from('stocks')
-      .select(
-        'id, customer_name, customer_phone, stock_date, before_dry_weight, after_dry_weight, drying_ratio, available_stock, user_id, stock_reason',
-      )
-      .order('stock_date', { ascending: false })
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const result = await supabase
+        .from('stocks')
+        .select(
+          'id, customer_name, customer_phone, stock_date, before_dry_weight, after_dry_weight, drying_ratio, available_stock, user_id, owner_id, admin_id, created_by, stock_reason',
+        )
+        .order('stock_date', { ascending: false })
 
-    const { data, error } = await query
+      data = result.data
+      error = result.error
+      if (!error) break
+      if (attempt === 0) await new Promise((resolve) => window.setTimeout(resolve, 700))
+    }
 
     if (error) {
+      if (
+        error.message.toLowerCase().includes('owner_id') ||
+        error.message.toLowerCase().includes('admin_id') ||
+        error.message.toLowerCase().includes('created_by')
+      ) {
+        const legacyFallback = await supabase
+          .from('stocks')
+          .select(
+            'id, customer_name, customer_phone, stock_date, before_dry_weight, after_dry_weight, drying_ratio, available_stock, user_id',
+          )
+          .order('stock_date', { ascending: false })
+
+        if (legacyFallback.error) {
+          setDbMessage(`Database load failed: ${legacyFallback.error.message}`)
+        } else {
+          setDbMessage(t('ownershipMigrationPending'))
+          setStocks((legacyFallback.data ?? []).map(mapDbRowToStock))
+        }
+        setDbLoading(false)
+        return
+      }
+
       if (error.message.toLowerCase().includes('stock_reason')) {
         const fallback = await supabase
           .from('stocks')
@@ -674,7 +939,9 @@ function App() {
       }
 
       if (error.message.toLowerCase().includes('customer_phone')) {
-        setDbMessage('Database load failed: add customer_phone column using SQL -> alter table public.stocks add column if not exists customer_phone text;')
+        setDbMessage(t('customerPhoneColumnMissing'))
+      } else if (error.message.toLowerCase().includes('failed to fetch') || error.message.toLowerCase().includes('network')) {
+        setDbMessage(t('databaseConnectionFailed'))
       } else {
         setDbMessage(`Database load failed: ${error.message}`)
       }
@@ -814,12 +1081,12 @@ function App() {
     event.preventDefault()
 
     if (!supabase) {
-      setAuthMessage('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable login.')
+      setAuthMessage(t('authDisabled'))
       return
     }
 
     if (!superAdminLogin.email.trim() || !superAdminLogin.password) {
-      setAuthMessage('Super Admin login requires Gmail address and password.')
+      setAuthMessage(t('superAdminLoginRequired'))
       return
     }
 
@@ -838,11 +1105,11 @@ function App() {
       const role = getRole(data.user)
       if (!emailLower.includes('harishhari3291') && !emailLower.includes('harishharo3291') && role !== 'super_admin') {
         await supabase.auth.signOut()
-        setAuthMessage('This account is not Super Admin. Please use Admin or User Login.')
+        setAuthMessage(t('notSuperAdmin'))
       } else {
         setActiveDashboardView('summary')
         setStockOpsView('movement')
-        setAuthMessage('Super Admin logged in successfully.')
+        setAuthMessage(t('superAdminLoggedIn'))
         setSuperAdminLogin({ email: '', password: '' })
         setAdminLogin({ name: '', phone: '', password: '' })
         setUserLogin({ name: '', phone: '', password: '' })
@@ -856,17 +1123,17 @@ function App() {
     event.preventDefault()
 
     if (!supabase) {
-      setAuthMessage('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable login.')
+      setAuthMessage(t('authDisabled'))
       return
     }
 
     if (!adminLogin.name.trim() || !adminLogin.phone.trim() || !adminLogin.password) {
-      setAuthMessage('Admin login requires name, phone number, and password.')
+      setAuthMessage(t('adminLoginRequired'))
       return
     }
 
     if (!/^\d{10}$/.test(adminLogin.phone)) {
-      setAuthMessage('Admin phone number must be exactly 10 digits.')
+      setAuthMessage(t('adminPhoneValidation'))
       return
     }
 
@@ -884,14 +1151,14 @@ function App() {
       const role = getRole(data.user)
       if (role !== 'admin' && role !== 'super_admin') {
         await supabase.auth.signOut()
-        setAuthMessage('This account is not Admin. Please use User Login.')
+        setAuthMessage(t('notAdmin'))
       } else {
         const enteredName = adminLogin.name.trim()
         const metaName = data.user?.user_metadata?.name
         const metaPhone = data.user?.user_metadata?.phone
         setActiveDashboardView('summary')
         setStockOpsView('movement')
-        setAuthMessage('Admin logged in successfully.')
+        setAuthMessage(t('adminLoggedIn'))
         setUserScope({
           name: normalizePersonName(String(metaName ?? enteredName)),
           phone: normalizePhone(String(metaPhone ?? adminLogin.phone)),
@@ -909,17 +1176,17 @@ function App() {
     event.preventDefault()
 
     if (!supabase) {
-      setAuthMessage('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable login.')
+      setAuthMessage(t('authDisabled'))
       return
     }
 
     if (!userLogin.name.trim() || !userLogin.phone.trim() || !userLogin.password) {
-      setAuthMessage('User login requires name, phone and password.')
+      setAuthMessage(t('userLoginRequired'))
       return
     }
 
     if (!/^\d{10}$/.test(userLogin.phone)) {
-      setAuthMessage('User phone number must be exactly 10 digits.')
+      setAuthMessage(t('userPhoneValidation'))
       return
     }
 
@@ -937,7 +1204,7 @@ function App() {
       const role = getRole(data.user)
       if (role === 'admin') {
         await supabase.auth.signOut()
-        setAuthMessage('Use Admin Login for admin accounts.')
+        setAuthMessage(t('useAdminLogin'))
       } else {
         const phoneFromLogin = normalizePhone(String(data.user?.user_metadata?.phone ?? userLogin.phone))
         const blockedStatus = await getBlockedUserByPhone(phoneFromLogin)
@@ -964,7 +1231,7 @@ function App() {
         const metaPhone = data.user?.user_metadata?.phone
         setActiveDashboardView('summary')
         setStockOpsView('movement')
-        setAuthMessage('User logged in successfully.')
+        setAuthMessage(t('userLoggedIn'))
         setUserScope({
           name: normalizePersonName(String(metaName ?? enteredName)),
           phone: normalizePhone(String(metaPhone ?? userLogin.phone)),
@@ -992,6 +1259,33 @@ function App() {
     await supabase.auth.signOut()
   }
 
+  const handleSetAccountActive = async (account, active) => {
+    if (!supabase || !isAdmin) {
+      setCreateUserMessage(t('accountStatusOnlyAdmin'))
+      return
+    }
+
+    if (account.role === 'ADMIN' && !isSuperAdmin) {
+      setCreateUserMessage(t('onlySuperAdminStatus'))
+      return
+    }
+
+    const { error } = await supabase.rpc('set_profile_active', {
+      target_id: account.id,
+      target_active: active,
+    })
+
+    if (error) {
+      setCreateUserMessage(`Account status update failed: ${error.message}`)
+      return
+    }
+
+    setManagedAccounts((previous) =>
+      previous.map((item) => item.id === account.id ? { ...item, active } : item),
+    )
+    setCreateUserMessage(`${account.name} ${active ? t('accountActivated') : t('accountDeactivated')}`)
+  }
+
   const handleSwitchLoginMode = (mode) => {
     setLoginMode(mode)
     setAuthMessage('')
@@ -1004,12 +1298,12 @@ function App() {
     event.preventDefault()
 
     if (!isAdmin) {
-      setCreateUserMessage('403 Forbidden: Only Admin or Super Admin can create accounts.')
+      setCreateUserMessage(t('onlyAdminCreateAccounts'))
       return
     }
 
     if (!supabase) {
-      setCreateUserMessage('Supabase is not configured.')
+      setCreateUserMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -1020,22 +1314,22 @@ function App() {
 
     // 403 Forbidden enforcement: Only Super Admin can create ADMIN accounts
     if (requestedRole === 'ADMIN' && !isSuperAdmin) {
-      setCreateUserMessage('403 Forbidden: Only Super Admin (harishhari3291@gmail.com) can create ADMIN accounts.')
+      setCreateUserMessage(t('onlySuperAdminCreateAdmin'))
       return
     }
 
     if (requestedRole === 'SUPER_ADMIN') {
-      setCreateUserMessage('403 Forbidden: Super Admin role cannot be created manually.')
+      setCreateUserMessage(t('superAdminRoleManual'))
       return
     }
 
     if (!name || !phone || !password) {
-      setCreateUserMessage('Name, phone, and password are required.')
+      setCreateUserMessage(t('requiredAccountFields'))
       return
     }
 
     if (!/^\d{10}$/.test(phone)) {
-      setCreateUserMessage('User phone number must be exactly 10 digits.')
+      setCreateUserMessage(t('userPhoneValidation'))
       return
     }
 
@@ -1103,34 +1397,78 @@ function App() {
     setCreateUserLoading(false)
   }
 
-  const handleAdminDeleteUser = async (event) => {
+  const handleAdminDeleteUser = async (event, target = null) => {
     event.preventDefault()
 
     if (!isAdmin) {
-      setCreateUserMessage('Only admin can delete users.')
+      setCreateUserMessage(t('onlyAdminDeleteUsers'))
       return
     }
 
     if (!supabase) {
-      setCreateUserMessage('Supabase is not configured.')
+      setCreateUserMessage(t('supabaseNotConfigured'))
       return
     }
 
-    const name = normalizePersonName(deleteUserForm.name)
-    const phone = normalizePhone(deleteUserForm.phone)
+    const name = normalizePersonName(target?.name ?? deleteUserForm.name)
+    const phone = normalizePhone(target?.phone ?? deleteUserForm.phone)
+    let targetId = target?.id
+    if (!targetId) {
+      const matchedProfile = managedAccounts.find((account) => normalizePhone(account.phone) === phone)
+      if (matchedProfile?.id) {
+        targetId = matchedProfile.id
+      }
+    }
 
     if (!name || !phone) {
-      setCreateUserMessage('Name and phone are required to delete user.')
+      setCreateUserMessage(t('deleteNamePhoneRequired'))
       return
     }
 
     if (!/^\d{10}$/.test(phone)) {
-      setCreateUserMessage('User phone number must be exactly 10 digits.')
+      setCreateUserMessage(t('deletePhoneValidation'))
+      return
+    }
+
+    if (phone === getPhoneFromUser(user, userScope) || `${phone}@user.local` === String(user.email ?? '').toLowerCase()) {
+      setCreateUserMessage(t('cannotDeleteSelf'))
+      return
+    }
+
+    let globalUsersMap = {}
+    try {
+      globalUsersMap = JSON.parse(localStorage.getItem('rb_users_map') || '{}')
+    } catch {
+      globalUsersMap = {}
+    }
+
+    const targetAccount = globalUsersMap[phone]
+    const targetRole = String(target?.role ?? targetAccount?.role ?? 'USER').toUpperCase()
+
+    if (targetRole === 'SUPER_ADMIN') {
+      setCreateUserMessage(t('cannotDeleteSuperAdmin'))
+      return
+    }
+
+    if (targetRole === 'ADMIN' && !isSuperAdmin) {
+      setCreateUserMessage(t('onlySuperAdminDeleteAdmin'))
       return
     }
 
     setDeleteUserLoading(true)
     setCreateUserMessage('')
+
+    if (targetId) {
+      const { error: deleteAccountError } = await supabase.rpc('delete_managed_account', {
+        target_id: targetId,
+      })
+
+      if (deleteAccountError) {
+        setCreateUserMessage(`Delete account failed: ${deleteAccountError.message}`)
+        setDeleteUserLoading(false)
+        return
+      }
+    }
 
     const { error: blockError } = await supabase
       .from('blocked_users')
@@ -1148,18 +1486,6 @@ function App() {
         ? t('blockedUsersTableMissing')
         : `Delete user failed: ${blockError.message}`
       setCreateUserMessage(blockedMessage)
-      setDeleteUserLoading(false)
-      return
-    }
-
-    const { error: stockDeleteError } = await supabase
-      .from('stocks')
-      .delete()
-      .in('customer_name', getPersonNameVariants(name))
-      .eq('customer_phone', phone)
-
-    if (stockDeleteError) {
-      setCreateUserMessage(`User blocked, but stock cleanup failed: ${stockDeleteError.message}`)
       setDeleteUserLoading(false)
       return
     }
@@ -1202,6 +1528,20 @@ function App() {
   }
 
   const editItem = useMemo(() => stocks.find((item) => item.id === editId) ?? null, [stocks, editId])
+  const farmerOptions = useMemo(
+    () =>
+      managedAccounts
+        .filter((account) => String(account.role ?? '').toUpperCase() === 'USER')
+        .map((account) => ({
+          id: account.id,
+          name: account.name || '',
+          phone: account.phone || '',
+          whatsappConsent: Boolean(account.whatsapp_consent),
+          smsConsent: Boolean(account.sms_consent),
+        }))
+        .filter((account) => account.id),
+    [managedAccounts],
+  )
 
   const scopedAndSortedStocks = useMemo(() => {
     const scopeName = userScope.name.trim().toLowerCase()
@@ -1254,13 +1594,15 @@ function App() {
       if (isAdmin) {
         const isAddedByThisAdmin = Boolean(
           (currentUserId && item.userId === currentUserId) ||
+          (currentUserId && item.ownerId === currentUserId) ||
+          (currentUserId && item.adminId === currentUserId) ||
+          (currentUserId && item.createdBy === currentUserId) ||
           (item.userId && adminKeys.includes(item.userId))
         )
         const isManagedCustomer = Boolean(itemPhone && myAdminPhonesArray.includes(itemPhone))
         const isSelfPhone = Boolean(currentPhone && itemPhone === currentPhone)
-        const isFallbackNoFilter = myAdminPhonesArray.length === 0
 
-        return isAddedByThisAdmin || isManagedCustomer || isSelfPhone || isFallbackNoFilter
+        return isAddedByThisAdmin || isManagedCustomer || isSelfPhone
       }
 
       // 3. Standard User sees ONLY their own stock records
@@ -1385,9 +1727,22 @@ function App() {
     )
   }, [scopedAndSortedStocks])
 
+  const invokeStockNotifications = useCallback(async (stockId, farmerId) => {
+    if (!supabase || !stockId) return
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const { error } = await supabase.functions.invoke('send-stock-notifications', {
+        body: { stock_id: stockId, farmer_id: farmerId || null },
+      })
+      if (!error) return
+      if (attempt < 3) {
+        await new Promise((resolve) => window.setTimeout(resolve, 500 * attempt))
+      }
+    }
+  }, [])
+
   const handleSaveStock = async (payload) => {
     if (!isAdmin) {
-      setDbMessage('Only admin can add or edit stock entries.')
+      setDbMessage(t('onlyAdminEdit'))
       return
     }
 
@@ -1428,6 +1783,9 @@ function App() {
 
       const insertPayload = {
         user_id: user.id,
+        owner_id: payload.farmerId || user.id,
+        admin_id: isSuperAdmin ? null : user.id,
+        created_by: user.id,
         customer_name: normalizedCustomerName,
         customer_phone: payload.customerPhone,
         stock_date: payload.stockDate,
@@ -1440,15 +1798,32 @@ function App() {
         insertPayload.stock_reason = payload.stockReason ?? ''
       }
 
-      const { error } = await supabase.from('stocks').insert(insertPayload)
+      const { data: insertedStock, error } = await supabase
+        .from('stocks')
+        .insert(insertPayload)
+        .select('id')
+        .single()
 
       if (error) {
         if (error.message.toLowerCase().includes('customer_phone')) {
-          setDbMessage('Insert failed: add customer_phone column using SQL -> alter table public.stocks add column if not exists customer_phone text;')
+          setDbMessage(`${t('insertFailed')}: ${t('customerPhoneColumnMissing')}`)
         } else {
           setDbMessage(`Insert failed: ${error.message}`)
         }
         return
+      }
+
+      if (insertedStock?.id) {
+        if (payload.farmerId) {
+          await supabase
+            .from('profiles')
+            .update({
+              whatsapp_consent: Boolean(payload.whatsappConsent),
+              sms_consent: Boolean(payload.smsConsent),
+            })
+            .eq('id', payload.farmerId)
+        }
+        void invokeStockNotifications(insertedStock.id, payload.farmerId)
       }
 
       const phoneToTrack = normalizePhone(payload.customerPhone)
@@ -1516,7 +1891,7 @@ function App() {
 
   const handleStockMovement = async (payload) => {
     if (!isAdmin) {
-      setDbMessage('Only admin can add stock in or stock out.')
+      setDbMessage(t('adminOnlyStockNote'))
       return
     }
 
@@ -1527,7 +1902,7 @@ function App() {
     const nextAvailable = previousAvailable + signedQuantity
 
     if (nextAvailable < 0) {
-      setDbMessage('Stock out cannot be greater than available stock.')
+      setDbMessage(t('stockOutTooLarge'))
       return
     }
 
@@ -1547,6 +1922,9 @@ function App() {
 
       const movementInsertPayload = {
         user_id: user.id,
+        owner_id: payload.farmerId || user.id,
+        admin_id: isSuperAdmin ? null : user.id,
+        created_by: user.id,
         customer_name: movementRecord.customerName,
         customer_phone: movementRecord.customerPhone,
         stock_date: movementRecord.stockDate,
@@ -1559,11 +1937,28 @@ function App() {
         movementInsertPayload.stock_reason = movementRecord.stockReason
       }
 
-      const { error } = await supabase.from('stocks').insert(movementInsertPayload)
+      const { data: insertedMovement, error } = await supabase
+        .from('stocks')
+        .insert(movementInsertPayload)
+        .select('id')
+        .single()
 
       if (error) {
         setDbMessage(`Stock movement failed: ${error.message}`)
         return
+      }
+
+      if (payload.movementType === 'in' && insertedMovement?.id) {
+        if (payload.farmerId) {
+          await supabase
+            .from('profiles')
+            .update({
+              whatsapp_consent: Boolean(payload.whatsappConsent),
+              sms_consent: Boolean(payload.smsConsent),
+            })
+            .eq('id', payload.farmerId)
+        }
+        void invokeStockNotifications(insertedMovement.id, payload.farmerId)
       }
 
       await loadStocks()
@@ -1599,7 +1994,7 @@ function App() {
 
   const handleEditStock = (id) => {
     if (!isAdmin) {
-      setDbMessage('Only admin can edit stock entries.')
+      setDbMessage(t('onlyAdminEdit'))
       return
     }
 
@@ -1609,7 +2004,7 @@ function App() {
 
   const handleDeleteStock = async (id) => {
     if (!isAdmin) {
-      setDbMessage('Only admin can delete stock entries.')
+      setDbMessage(t('onlyAdminDelete'))
       return
     }
 
@@ -1884,7 +2279,7 @@ function App() {
 
   const handleStartRound = async () => {
     if (!isAdmin) {
-      setRoundMessage('Only admin can manage round reports.')
+      setRoundMessage(t('onlyAdminReports'))
       return
     }
 
@@ -1910,7 +2305,7 @@ function App() {
     }
 
     if (!supabase || !user) {
-      setRoundMessage('Supabase is not configured.')
+      setRoundMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -1923,6 +2318,8 @@ function App() {
       start_date: roundForm.startDate,
       status: 'open',
       created_by: user.id,
+      owner_id: user.id,
+      admin_id: isSuperAdmin ? null : user.id,
     }
     if (hasRoundNumberColumn) {
       insertPayload.round_no = roundNumber
@@ -1948,7 +2345,7 @@ function App() {
 
   const handleFinishOpenRound = async () => {
     if (!isAdmin) {
-      setRoundMessage('Only admin can manage round reports.')
+      setRoundMessage(t('onlyAdminReports'))
       return
     }
 
@@ -1973,7 +2370,7 @@ function App() {
     }
 
     if (!supabase || !user) {
-      setRoundMessage('Supabase is not configured.')
+      setRoundMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -2022,7 +2419,7 @@ function App() {
 
   const handleSaveRoundDates = async () => {
     if (!isAdmin) {
-      setRoundMessage('Only admin can manage round reports.')
+      setRoundMessage(t('onlyAdminReports'))
       return
     }
 
@@ -2052,7 +2449,7 @@ function App() {
     }
 
     if (!supabase || !user) {
-      setRoundMessage('Supabase is not configured.')
+      setRoundMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -2091,7 +2488,7 @@ function App() {
 
   const handleDeleteRound = async (round) => {
     if (!isAdmin) {
-      setRoundMessage('Only admin can manage round reports.')
+      setRoundMessage(t('onlyAdminReports'))
       return
     }
 
@@ -2100,7 +2497,7 @@ function App() {
     }
 
     if (!supabase || !user) {
-      setRoundMessage('Supabase is not configured.')
+      setRoundMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -2139,7 +2536,7 @@ function App() {
 
   const handleDeleteAllReports = async () => {
     if (!isAdmin) {
-      setRoundMessage('Only admin can manage round reports.')
+      setRoundMessage(t('onlyAdminReports'))
       return
     }
 
@@ -2149,7 +2546,7 @@ function App() {
     }
 
     if (!supabase || !user) {
-      setRoundMessage('Supabase is not configured.')
+      setRoundMessage(t('supabaseNotConfigured'))
       return
     }
 
@@ -2464,6 +2861,15 @@ function App() {
         >
           {t('reports')}
         </button>
+        {isAdmin ? (
+          <button
+            type="button"
+            className={`dashboard-nav-button ${activeDashboardView === 'pdf-reports' ? 'active' : ''}`}
+            onClick={() => setActiveDashboardView('pdf-reports')}
+          >
+            Download PDF
+          </button>
+        ) : null}
       </nav>
 
       {activeDashboardView === 'summary' ? (
@@ -2472,11 +2878,11 @@ function App() {
           <section className="summary-grid super-admin-summary">
             <article className="summary-card highlight-card">
               <h3>{t('totalAdmins')}</h3>
-              <strong>{Object.values(JSON.parse(localStorage.getItem('rb_users_map') || '{}')).filter(u => u.role === 'ADMIN').length}</strong>
+              <strong>{managedAccounts.filter((account) => account.role === 'ADMIN').length}</strong>
             </article>
             <article className="summary-card highlight-card">
               <h3>{t('totalUsers')}</h3>
-              <strong>{Object.values(JSON.parse(localStorage.getItem('rb_users_map') || '{}')).filter(u => u.role === 'USER').length}</strong>
+              <strong>{managedAccounts.filter((account) => account.role === 'USER').length}</strong>
             </article>
             <article className="summary-card">
               <h3>{t('totalFarms')}</h3>
@@ -2573,6 +2979,7 @@ function App() {
               editItem={editItem}
               onCancelEdit={handleCancelEdit}
               canManage={isAdmin}
+              farmerOptions={farmerOptions}
               t={t}
             />
           </section>
@@ -2600,7 +3007,12 @@ function App() {
             {stockOpsView === 'movement' ? (
               <section className="panel">
                 <h2>{t('stockMovement')}</h2>
-                <StockMovement canManage={isAdmin} onSubmit={handleStockMovement} t={t} />
+                <StockMovement
+                  canManage={isAdmin}
+                  onSubmit={handleStockMovement}
+                  farmerOptions={farmerOptions}
+                  t={t}
+                />
               </section>
             ) : null}
 
@@ -2636,6 +3048,16 @@ function App() {
           </section>
         ) : null}
 
+        {isAdmin && activeDashboardView === 'pdf-reports' ? (
+          <ReportsPage
+            stocks={scopedAndSortedStocks}
+            isSuperAdmin={isSuperAdmin}
+            roleLabel={isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'}
+            generatedBy={profile?.name || user.email || 'Admin'}
+            currentUserId={user.id}
+          />
+        ) : null}
+
         {isAdmin && activeDashboardView === 'create-user' ? (
           <section className="panel">
             <h2>{t('adminCreateUser')}</h2>
@@ -2649,7 +3071,7 @@ function App() {
                   onChange={(event) =>
                     setCreateUserForm((previous) => ({ ...previous, name: event.target.value }))
                   }
-                  placeholder="Gurusamy"
+                  placeholder={t('name')}
                 />
               </label>
               <label>
@@ -2693,12 +3115,16 @@ function App() {
                   onChange={(event) =>
                     setCreateUserForm((previous) => ({ ...previous, password: event.target.value }))
                   }
-                  placeholder="Create password"
+                  placeholder={t('password')}
                 />
               </label>
               <div className="actions">
                 <button type="submit" disabled={createUserLoading}>
-                  {createUserLoading ? t('creating') : t('createUser')}
+                  {createUserLoading
+                    ? t('creating')
+                    : String(createUserForm.role || 'USER').toUpperCase() === 'ADMIN'
+                      ? t('createAdmin') || 'Create Admin'
+                      : t('createUser')}
                 </button>
               </div>
               {createUserMessage ? <p className="auth-message">{createUserMessage}</p> : null}
@@ -2707,8 +3133,12 @@ function App() {
               {t('loginEmailForUser')} <code>{'{phone_number}'}@user.local</code>
             </p>
 
-            <h2>{t('deleteUser')}</h2>
-            <p>{t('deleteUserNote')}</p>
+            <h2>{isSuperAdmin ? t('deleteUserOrAdmin') : t('deleteUser')}</h2>
+            <p>
+              {isSuperAdmin
+                ? t('deleteSuperAdminAccountsNote')
+                : t('deleteAssignedAccountsNote')}
+            </p>
             <form className="stock-form" onSubmit={handleAdminDeleteUser}>
               <label>
                 {t('name')}
@@ -2718,7 +3148,7 @@ function App() {
                   onChange={(event) =>
                     setDeleteUserForm((previous) => ({ ...previous, name: event.target.value }))
                   }
-                  placeholder="Gurusamy"
+                  placeholder={t('name')}
                 />
               </label>
               <label>
@@ -2746,52 +3176,91 @@ function App() {
             </form>
 
             <div style={{ marginTop: '2rem' }}>
-              <h3>{t('registeredUsers') || 'Registered User Accounts'}</h3>
-              {Object.keys(JSON.parse(localStorage.getItem('rb_users_map') || '{}')).length === 0 ? (
-                <p className="empty-state">No registered accounts listed in database yet.</p>
-              ) : (
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{t('name')}</th>
-                        <th>{t('phoneNumber')}</th>
-                        <th>{t('role')}</th>
-                        <th>{t('actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.values(JSON.parse(localStorage.getItem('rb_users_map') || '{}'))
-                        .filter((u) => isSuperAdmin || u.created_by === (user?.id ?? 'super_admin'))
-                        .map((u) => (
-                          <tr key={`user-row-${u.phone}`}>
-                            <td>{u.name}</td>
-                            <td>{u.phone}</td>
-                            <td>
-                              <span className={`user-chip ${u.role === 'ADMIN' ? 'admin-chip' : ''}`}>
-                                {u.role}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="danger"
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
-                                disabled={deleteUserLoading}
-                                onClick={(e) => {
-                                  setDeleteUserForm({ name: u.name, phone: u.phone })
-                                  handleAdminDeleteUser({ preventDefault: () => {} })
-                                }}
-                              >
-                                {t('delete')}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {(() => {
+                const registeredAccounts = managedAccounts
+                const adminAccounts = registeredAccounts.filter(
+                  (account) => String(account.role ?? '').toUpperCase() === 'ADMIN',
+                )
+                const userAccounts = registeredAccounts.filter(
+                  (account) => String(account.role ?? '').toUpperCase() !== 'ADMIN',
+                )
+
+                const renderDeleteTable = (title, accounts) => {
+                  if (accounts.length === 0) {
+                    return null
+                  }
+
+                  return (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3>{title}</h3>
+                      <div className="table-wrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>{t('name')}</th>
+                              <th>{t('phoneNumber')}</th>
+                              <th>{t('role')}</th>
+                              <th>{t('status')}</th>
+                              <th>{t('actions')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {accounts.map((account) => {
+                              const accountRole = String(account.role ?? 'USER').toUpperCase()
+                              return (
+                                <tr key={`${accountRole}-${account.phone}`}>
+                                  <td>{account.name}</td>
+                                  <td>{account.phone}</td>
+                                  <td>
+                                    <span className={`user-chip ${accountRole === 'ADMIN' ? 'admin-chip' : ''}`}>
+                                      {accountRole}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <button
+                                      type="button"
+                                      className={account.active === false ? 'secondary' : 'danger'}
+                                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', marginRight: '0.4rem' }}
+                                      onClick={() => handleSetAccountActive(account, account.active === false)}
+                                    >
+                                      {account.active === false ? t('activate') : t('deactivate')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="danger"
+                                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                                      disabled={deleteUserLoading || accountRole === 'SUPER_ADMIN'}
+                                      onClick={() => {
+                                        if (!window.confirm(`${t('deleteAccountConfirm')} ${accountRole} ${account.name} (${account.phone})`)) {
+                                          return
+                                        }
+                                        setDeleteUserForm({ name: account.name, phone: account.phone })
+                                        handleAdminDeleteUser(
+                                          { preventDefault: () => {} },
+                                          { id: account.id, name: account.name, phone: account.phone, role: account.role },
+                                        )
+                                      }}
+                                    >
+                                      {t('delete')}
+                                    </button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                }
+
+                return (
+                  <>
+                    {isSuperAdmin ? renderDeleteTable(t('adminAccounts'), adminAccounts) : null}
+                    {renderDeleteTable(t('userAccounts'), userAccounts)}
+                  </>
+                )
+              })()}
             </div>
           </section>
         ) : null}
@@ -2923,7 +3392,7 @@ function App() {
                       onChange={(event) =>
                         setReportPerson((previous) => ({ ...previous, name: event.target.value }))
                       }
-                      placeholder="Gurusamy"
+                      placeholder={t('name')}
                     />
                   </label>
                   <label>

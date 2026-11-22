@@ -1,15 +1,18 @@
 import { useState } from 'react'
 
 const initialMovement = {
+  farmerId: '',
   customerName: '',
   customerPhone: '',
   stockDate: '',
   movementType: 'in',
   afterDryWeight: '',
   reason: '',
+  whatsappConsent: false,
+  smsConsent: false,
 }
 
-function StockMovement({ canManage, onSubmit, t = (value) => value }) {
+function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) => value }) {
   const [form, setForm] = useState(initialMovement)
 
   const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10)
@@ -35,12 +38,15 @@ function StockMovement({ canManage, onSubmit, t = (value) => value }) {
     }
 
     onSubmit({
+      farmerId: form.farmerId || null,
       customerName: form.customerName.trim(),
       customerPhone: form.customerPhone,
       stockDate: form.stockDate,
       movementType: form.movementType,
       afterDryWeight,
       reason: form.reason.trim(),
+      whatsappConsent: form.whatsappConsent,
+      smsConsent: form.smsConsent,
     })
 
     setForm(initialMovement)
@@ -50,6 +56,56 @@ function StockMovement({ canManage, onSubmit, t = (value) => value }) {
     <form className="stock-form" onSubmit={handleSubmit}>
       {!canManage ? <p className="permission-note">{t('adminOnlyStockNote')}</p> : null}
       <fieldset className="form-fieldset" disabled={!canManage}>
+        {farmerOptions.length > 0 ? (
+          <label>
+            {t('customerName')}
+            <select
+              value={form.farmerId}
+              onChange={(event) => {
+                const selected = farmerOptions.find((farmer) => farmer.id === event.target.value)
+                setForm((previous) => ({
+                  ...previous,
+                  farmerId: event.target.value,
+                  customerName: selected?.name || '',
+                  customerPhone: selected?.phone || '',
+                  whatsappConsent: Boolean(selected?.whatsappConsent),
+                  smsConsent: Boolean(selected?.smsConsent),
+                }))
+              }}
+            >
+              <option value="">Select farmer</option>
+              {farmerOptions.map((farmer) => (
+                <option key={farmer.id} value={farmer.id}>
+                  {farmer.name} ({farmer.phone || '-'})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {farmerOptions.length > 0 ? (
+          <>
+            <label>
+              <input
+                type="checkbox"
+                checked={form.whatsappConsent}
+                onChange={(event) =>
+                  setForm((previous) => ({ ...previous, whatsappConsent: event.target.checked }))
+                }
+              />
+              WhatsApp consent
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={form.smsConsent}
+                onChange={(event) =>
+                  setForm((previous) => ({ ...previous, smsConsent: event.target.checked }))
+                }
+              />
+              SMS consent
+            </label>
+          </>
+        ) : null}
         <label>
           {t('customerName')}
           <input

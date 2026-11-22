@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 
 const emptyForm = {
+  farmerId: '',
   customerName: '',
   customerPhone: '',
   stockDate: '',
   beforeDryWeight: '',
   afterDryWeight: '',
+  whatsappConsent: false,
+  smsConsent: false,
 }
 
-function AddStock({ onSave, editItem, onCancelEdit, canManage, t = (value) => value }) {
+function AddStock({ onSave, editItem, onCancelEdit, canManage, farmerOptions = [], t = (value) => value }) {
   const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10)
 
   const formatRatio = (value) => {
@@ -25,11 +28,14 @@ function AddStock({ onSave, editItem, onCancelEdit, canManage, t = (value) => va
     }
 
     setForm({
+      farmerId: editItem.farmerId ?? '',
       customerName: editItem.customerName,
       customerPhone: editItem.customerPhone ?? '',
       stockDate: editItem.stockDate,
       beforeDryWeight: String(editItem.beforeDryWeight),
       afterDryWeight: String(editItem.afterDryWeight),
+      whatsappConsent: editItem.whatsappConsent ?? false,
+      smsConsent: editItem.smsConsent ?? false,
     })
   }, [editItem])
 
@@ -67,12 +73,15 @@ function AddStock({ onSave, editItem, onCancelEdit, canManage, t = (value) => va
     }
 
     onSave({
+      farmerId: form.farmerId || null,
       customerName: form.customerName.trim(),
       customerPhone: form.customerPhone.trim(),
       stockDate: form.stockDate,
       beforeDryWeight: beforeDry,
       afterDryWeight: afterDry,
       dryingRatio: ratio,
+      whatsappConsent: form.whatsappConsent,
+      smsConsent: form.smsConsent,
     })
 
     setForm(emptyForm)
@@ -84,6 +93,56 @@ function AddStock({ onSave, editItem, onCancelEdit, canManage, t = (value) => va
       {!canManage ? <p className="permission-note">{t('adminOnlyStockNote')}</p> : null}
       <form className="stock-form" onSubmit={handleSubmit}>
         <fieldset className="form-fieldset" disabled={!canManage}>
+        {farmerOptions.length > 0 ? (
+          <label>
+            {t('customerName')}
+            <select
+              value={form.farmerId}
+              onChange={(event) => {
+                const selected = farmerOptions.find((farmer) => farmer.id === event.target.value)
+                setForm((previous) => ({
+                  ...previous,
+                  farmerId: event.target.value,
+                  customerName: selected?.name || '',
+                  customerPhone: selected?.phone || '',
+                  whatsappConsent: Boolean(selected?.whatsappConsent),
+                  smsConsent: Boolean(selected?.smsConsent),
+                }))
+              }}
+            >
+              <option value="">Select farmer</option>
+              {farmerOptions.map((farmer) => (
+                <option key={farmer.id} value={farmer.id}>
+                  {farmer.name} ({farmer.phone || '-'})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {farmerOptions.length > 0 ? (
+          <>
+            <label>
+              <input
+                type="checkbox"
+                checked={form.whatsappConsent}
+                onChange={(event) =>
+                  setForm((previous) => ({ ...previous, whatsappConsent: event.target.checked }))
+                }
+              />
+              WhatsApp consent
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={form.smsConsent}
+                onChange={(event) =>
+                  setForm((previous) => ({ ...previous, smsConsent: event.target.checked }))
+                }
+              />
+              SMS consent
+            </label>
+          </>
+        ) : null}
         <label>
           {t('customerName')}
           <input
