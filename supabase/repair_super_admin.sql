@@ -1,16 +1,11 @@
 -- Run in the Supabase SQL editor after rbac_migration.sql.
--- Replace OWNER_EMAIL with the exact email used for the first Super Admin.
 -- This script repairs Auth app metadata and the public profiles row.
 
 do $$
 declare
-  target_email text := lower('OWNER_EMAIL');
+  target_email text := lower('harishhari3291@gmail.com');
   target_id uuid;
 begin
-  if target_email = 'owner_email' then
-    raise exception 'Replace OWNER_EMAIL before running this repair.';
-  end if;
-
   select id into target_id
   from auth.users
   where lower(email) = target_email;
@@ -56,4 +51,4 @@ $$;
 --        p.role as profile_role, p.active
 -- from auth.users u
 -- left join public.profiles p on p.id = u.id
--- where lower(u.email) = lower('OWNER_EMAIL');
+-- where lower(u.email) = lower('harishhari3291@gmail.com');
