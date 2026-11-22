@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { Directory, Filesystem } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Download, FileText } from 'lucide-react'
@@ -38,7 +41,7 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
     setToDate(end)
   }
 
-  const generatePdf = () => {
+  const generatePdf = async () => {
     setMessage('')
     if (!fromDate || !toDate) {
       setMessage('Please select a valid date range.')
@@ -155,7 +158,40 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
     }
 
     const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    doc.save(`${safeTitle}-${fromDate}-to-${toDate}.pdf`)
+    const fileName = `${safeTitle}-${fromDate}-to-${toDate}.pdf`
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const pdfData = doc.output('arraybuffer')
+        const bytes = new Uint8Array(pdfData)
+        let binary = ''
+        for (let index = 0; index < bytes.length; index += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000))
+        }
+        const data = btoa(binary)
+        await Filesystem.writeFile({
+          path: fileName,
+          data,
+          directory: Directory.Cache,
+        })
+        const { uri } = await Filesystem.getUri({
+          path: fileName,
+          directory: Directory.Cache,
+        })
+        await Share.share({
+          title: 'Gurusamy Cardamom Management System PDF',
+          text: fileName,
+          url: uri,
+          dialogTitle: 'Share or save PDF',
+        })
+        setMessage('PDF is ready to share or save.')
+      } catch (error) {
+        setMessage(`PDF download failed: ${error.message || 'Unknown error'}`)
+      }
+      return
+    }
+
+    doc.save(fileName)
   }
 
   return (

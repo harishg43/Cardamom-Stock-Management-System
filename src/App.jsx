@@ -9,7 +9,7 @@ import { isSupabaseConfigured, supabase } from './services/supabaseClient'
 
 const translations = {
   en: {
-    appTitle: 'Gurusamy Cardamom',
+    appTitle: 'Gurusamy Cardamom Management System',
     appSubtitle: '',
     superAdminLogin: 'Super Admin Login',
     superAdminDetails: 'Enter Gmail address and password for Super Admin access.',
@@ -1330,6 +1330,22 @@ function App() {
 
     if (!/^\d{10}$/.test(phone)) {
       setCreateUserMessage(t('userPhoneValidation'))
+      return
+    }
+
+    const { data: existingProfiles, error: duplicateCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('phone', phone)
+      .limit(1)
+
+    if (duplicateCheckError) {
+      setCreateUserMessage(`Create account failed: ${duplicateCheckError.message}`)
+      return
+    }
+
+    if ((existingProfiles ?? []).length > 0) {
+      setCreateUserMessage(`Create account failed: A user account already exists for phone number ${phone}.`)
       return
     }
 

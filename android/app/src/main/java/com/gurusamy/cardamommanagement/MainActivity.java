@@ -1,4 +1,4 @@
-package com.gurusamy.cardamom;
+package com.gurusamy.cardamommanagement;
 
 import com.getcapacitor.BridgeActivity;
 

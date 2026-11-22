@@ -1,4 +1,4 @@
-# Cardamom Web App
+# Gurusamy Cardamom Management System
 
 This project is a web-only React + Vite application for managing cardamom stock records.
 
@@ -55,5 +55,23 @@ WhatsApp delivery uses the Meta WhatsApp Cloud API. Register a Meta business acc
 No provider credentials are stored in the React app or in `VITE_*` environment variables. A notification is triggered only after the Supabase stock insert succeeds. WhatsApp and SMS are attempted independently and delivery state is stored in `public.message_history`.
 No notification content or notification counters are displayed in the application dashboard.
 
-Android and Capacitor files have been removed from this project.
+## Android / APK build
+
+The existing React, Supabase, authentication, roles, and database data are shared by both the website and Android app.
+
+From the project folder, run these commands one at a time:
+
+```bash
+npm install
+npm run build
+npx cap sync android
+npx cap open android
+```
+
+In Android Studio, use **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
+The debug APK will be written to:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Keep `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env` or `.env.production` for local builds. Never add a Supabase service-role or secret key to Vite environment variables.
 

@@ -631,6 +631,7 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+
 button {
   border: none;
   border-radius: 10px;
@@ -1028,4 +1029,3 @@ tbody tr.stock-out-row:hover {
   border-left: 4px solid #a855f7 !important;
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(59, 130, 246, 0.04)) !important;
 }
-

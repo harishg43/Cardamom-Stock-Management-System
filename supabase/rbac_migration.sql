@@ -60,6 +60,8 @@ set search_path = public, auth
 as $$
 declare
   requested_role text;
+  normalized_phone text;
+  creator_id uuid;
 begin
   requested_role := upper(coalesce(
     new.raw_app_meta_data->>'role',
@@ -77,6 +79,25 @@ begin
     requested_role := 'USER';
   end if;
 
+  normalized_phone := nullif(regexp_replace(coalesce(new.raw_user_meta_data->>'phone', ''), '\D', '', 'g'), '');
+
+  if normalized_phone is not null
+     and exists (
+       select 1
+       from public.profiles p
+       where p.phone = normalized_phone
+         and p.id <> new.id
+     ) then
+    raise exception 'A user profile already exists for phone number %', normalized_phone;
+  end if;
+
+  if coalesce(new.raw_user_meta_data->>'created_by', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  then
+    creator_id := (new.raw_user_meta_data->>'created_by')::uuid;
+  else
+    creator_id := null;
+  end if;
+
   insert into public.profiles (
     id,
     name,
@@ -88,10 +109,10 @@ begin
   values (
     new.id,
     nullif(trim(coalesce(new.raw_user_meta_data->>'name', '')), ''),
-    nullif(regexp_replace(coalesce(new.raw_user_meta_data->>'phone', ''), '\D', '', 'g'), ''),
+    normalized_phone,
     requested_role,
     true,
-    nullif(new.raw_user_meta_data->>'created_by', '')::uuid
+    creator_id
   )
   on conflict (id) do update set
     name = excluded.name,
@@ -125,7 +146,12 @@ select
     else 'USER'
   end,
   true,
-  nullif(u.raw_user_meta_data->>'created_by', '')::uuid
+  case
+    when coalesce(u.raw_user_meta_data->>'created_by', '') ~*
+      '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      then (u.raw_user_meta_data->>'created_by')::uuid
+    else null
+  end
 from auth.users u
 on conflict (id) do update set
   name = excluded.name,
