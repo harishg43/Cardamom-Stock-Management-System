@@ -10,6 +10,17 @@ Commands:
 
 The application runs entirely in the browser and uses `public/cardamom.jpeg` as the background image.
 
+## Supabase environment setup
+
+For local development, copy `.env.example` to `.env` and set:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Restart `npm run dev` after changing `.env`.
+
+For GitHub Pages, configure repository Actions variables/secrets named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The included deployment workflow passes them into `npm run build`; Vite replaces them in the hosted JavaScript bundle.
+
 ## WhatsApp, SMS, and PDF setup
 
 1. Run both SQL migration files in the Supabase SQL editor:
