@@ -67,13 +67,15 @@ security definer
 set search_path = public
 as $$
 begin
-  if new.role is distinct from old.role
+  if auth.uid() is not null
+     and new.role is distinct from old.role
      and not public.is_super_admin()
   then
     raise exception 'Forbidden: only Super Admin may change profile roles';
   end if;
 
-  if new.created_by is distinct from old.created_by
+  if auth.uid() is not null
+     and new.created_by is distinct from old.created_by
      and not public.is_super_admin()
   then
     raise exception 'Forbidden: only Super Admin may change account ownership';
@@ -229,6 +231,69 @@ as $$
     false
   );
 $$;
+
+create or replace function public.ensure_own_profile()
+returns text
+language plpgsql
+stable
+security definer
+set search_path = public, auth
+as $$
+declare
+  auth_user auth.users%rowtype;
+  resolved_role text;
+  normalized_phone text;
+begin
+  if auth.uid() is null then
+    return null;
+  end if;
+
+  select * into auth_user
+  from auth.users
+  where id = auth.uid();
+
+  if auth_user.id is null then
+    return null;
+  end if;
+
+  resolved_role := upper(coalesce(auth_user.raw_app_meta_data->>'role', 'USER'));
+  if resolved_role not in ('SUPER_ADMIN', 'ADMIN', 'USER') then
+    resolved_role := 'USER';
+  end if;
+
+  normalized_phone := nullif(
+    regexp_replace(coalesce(auth_user.raw_user_meta_data->>'phone', ''), '\D', '', 'g'),
+    ''
+  );
+
+  insert into public.profiles (id, name, phone, role, active)
+  values (
+    auth_user.id,
+    nullif(trim(coalesce(auth_user.raw_user_meta_data->>'name', '')), ''),
+    normalized_phone,
+    resolved_role,
+    true
+  )
+  on conflict (id) do update set
+    name = coalesce(excluded.name, public.profiles.name),
+    phone = coalesce(excluded.phone, public.profiles.phone),
+    role = case
+      when public.profiles.role = 'SUPER_ADMIN' then 'SUPER_ADMIN'
+      else excluded.role
+    end,
+    active = public.profiles.active,
+    updated_at = now();
+
+  select role into resolved_role
+  from public.profiles
+  where id = auth_user.id;
+
+  return resolved_role;
+end;
+$$;
+
+revoke all on function public.ensure_own_profile() from public;
+grant execute on function public.ensure_own_profile() to authenticated;
 
 alter table public.stocks add column if not exists owner_id uuid references auth.users(id);
 alter table public.stocks add column if not exists admin_id uuid references auth.users(id);

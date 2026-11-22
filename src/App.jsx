@@ -1054,6 +1054,30 @@ function App() {
 
   const getProfileRole = async (authUser) => {
     if (!authUser?.id) return ''
+
+    const { data: ensuredRole, error: ensureError } = await supabase.rpc('ensure_own_profile')
+    if (!ensureError && ensuredRole) {
+      const normalizedRole = String(ensuredRole).toLowerCase()
+      if (normalizedRole === 'super_admin') {
+        const { data: ensuredProfile } = await supabase
+          .from('profiles')
+          .select('role,active')
+          .eq('id', authUser.id)
+          .maybeSingle()
+        if (ensuredProfile?.active === false) return 'inactive'
+        return normalizedRole
+      }
+      if (normalizedRole === 'admin' || normalizedRole === 'user') {
+        const { data: ensuredProfile } = await supabase
+          .from('profiles')
+          .select('role,active')
+          .eq('id', authUser.id)
+          .maybeSingle()
+        if (ensuredProfile?.active === false) return 'inactive'
+        return normalizedRole
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('role,active')
