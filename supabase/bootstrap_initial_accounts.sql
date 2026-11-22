@@ -20,59 +20,72 @@ begin
   from auth.users
   where lower(email) = '9961153291@user.local';
 
-  if super_admin_id is null
-     or admin_id is null
-     or user_id is null
-  then
-    raise exception
-      'Missing Auth users. Super Admin=%, Admin=%, User=%',
+    if super_admin_id is not null then
+      update auth.users
+      set raw_app_meta_data =
+        coalesce(raw_app_meta_data, '{}'::jsonb)
+        || jsonb_build_object('role', 'SUPER_ADMIN'),
+        raw_user_meta_data =
+        coalesce(raw_user_meta_data, '{}'::jsonb)
+        || jsonb_build_object('name', 'Harish', 'role', 'SUPER_ADMIN')
+      where id = super_admin_id;
+
+      insert into public.profiles (id, name, phone, role, active, created_by)
+      values (super_admin_id, 'Harish', null, 'SUPER_ADMIN', true, null)
+      on conflict (id) do update set
+        name = 'Harish',
+        role = 'SUPER_ADMIN',
+        active = true,
+        created_by = null,
+        updated_at = now();
+    end if;
+
+    if admin_id is not null then
+      update auth.users
+      set raw_app_meta_data =
+        coalesce(raw_app_meta_data, '{}'::jsonb)
+        || jsonb_build_object('role', 'ADMIN'),
+        raw_user_meta_data =
+        coalesce(raw_user_meta_data, '{}'::jsonb)
+        || jsonb_build_object('name', 'Harish', 'phone', '8270153291', 'role', 'ADMIN', 'created_by', super_admin_id::text)
+      where id = admin_id;
+
+      insert into public.profiles (id, name, phone, role, active, created_by)
+      values (admin_id, 'Harish', '8270153291', 'ADMIN', true, super_admin_id)
+      on conflict (id) do update set
+        name = 'Harish',
+        phone = '8270153291',
+        role = 'ADMIN',
+        active = true,
+        created_by = coalesce(excluded.created_by, public.profiles.created_by),
+        updated_at = now();
+    end if;
+
+    if user_id is not null then
+      update auth.users
+      set raw_app_meta_data =
+        coalesce(raw_app_meta_data, '{}'::jsonb)
+        || jsonb_build_object('role', 'USER'),
+        raw_user_meta_data =
+        coalesce(raw_user_meta_data, '{}'::jsonb)
+        || jsonb_build_object('name', 'Gurusamy', 'phone', '9961153291', 'role', 'USER', 'created_by', admin_id::text)
+      where id = user_id;
+
+      insert into public.profiles (id, name, phone, role, active, created_by)
+      values (user_id, 'Gurusamy', '9961153291', 'USER', true, admin_id)
+      on conflict (id) do update set
+        name = 'Gurusamy',
+        phone = '9961153291',
+        role = 'USER',
+        active = true,
+        created_by = coalesce(excluded.created_by, public.profiles.created_by),
+        updated_at = now();
+    end if;
+
+    raise notice 'Processed Super Admin=%, Admin=%, User=%',
       super_admin_id is not null,
       admin_id is not null,
       user_id is not null;
-  end if;
-
-  update auth.users
-  set raw_app_meta_data =
-    coalesce(raw_app_meta_data, '{}'::jsonb)
-    || jsonb_build_object('role', 'SUPER_ADMIN'),
-    raw_user_meta_data =
-    coalesce(raw_user_meta_data, '{}'::jsonb)
-    || jsonb_build_object('name', 'Harish', 'role', 'SUPER_ADMIN')
-  where id = super_admin_id;
-
-  update auth.users
-  set raw_app_meta_data =
-    coalesce(raw_app_meta_data, '{}'::jsonb)
-    || jsonb_build_object('role', 'ADMIN'),
-    raw_user_meta_data =
-    coalesce(raw_user_meta_data, '{}'::jsonb)
-    || jsonb_build_object('name', 'Harish', 'phone', '8270153291', 'role', 'ADMIN', 'created_by', super_admin_id::text)
-  where id = admin_id;
-
-  update auth.users
-  set raw_app_meta_data =
-    coalesce(raw_app_meta_data, '{}'::jsonb)
-    || jsonb_build_object('role', 'USER'),
-    raw_user_meta_data =
-    coalesce(raw_user_meta_data, '{}'::jsonb)
-    || jsonb_build_object('name', 'Gurusamy', 'phone', '9961153291', 'role', 'USER', 'created_by', admin_id::text)
-  where id = user_id;
-
-  insert into public.profiles (id, name, phone, role, active, created_by)
-  values
-    (super_admin_id, 'Harish', null, 'SUPER_ADMIN', true, null),
-    (admin_id, 'Harish', '8270153291', 'ADMIN', true, super_admin_id),
-    (user_id, 'Gurusamy', '9961153291', 'USER', true, admin_id)
-  on conflict (id) do update set
-    name = excluded.name,
-    phone = excluded.phone,
-    role = excluded.role,
-    active = true,
-    created_by = excluded.created_by,
-    updated_at = now();
-
-  raise notice 'Initialized Super Admin=%, Admin=%, User=%',
-    super_admin_id, admin_id, user_id;
 end
 $$;
 
