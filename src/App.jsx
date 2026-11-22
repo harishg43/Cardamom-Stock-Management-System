@@ -746,15 +746,6 @@ function App() {
     if (profile?.role) {
       return String(profile.role).toUpperCase()
     }
-    const roleMeta = String(user.app_metadata?.role ?? user.user_metadata?.role ?? '').toUpperCase()
-    if (roleMeta === 'SUPER_ADMIN') {
-      return 'SUPER_ADMIN'
-    }
-
-    if (roleMeta === 'ADMIN') {
-      return 'ADMIN'
-    }
-
     return 'USER'
   }, [user, profile])
 
@@ -1061,10 +1052,16 @@ function App() {
     [normalizePhone],
   )
 
-  const getRole = (authUser) => {
-    const roleFromAppMeta = authUser?.app_metadata?.role
-    const roleFromUserMeta = authUser?.user_metadata?.role
-    return String(roleFromAppMeta ?? roleFromUserMeta ?? '').toLowerCase()
+  const getProfileRole = async (authUser) => {
+    if (!authUser?.id) return ''
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role,active')
+      .eq('id', authUser.id)
+      .maybeSingle()
+    if (error) return ''
+    if (data?.active === false) return 'inactive'
+    return String(data?.role ?? '').toLowerCase()
   }
 
   const handleSuperAdminSignIn = async (event) => {
@@ -1091,8 +1088,11 @@ function App() {
     if (error) {
       setAuthMessage(error.message)
     } else {
-      const role = getRole(data.user)
-      if (role !== 'super_admin') {
+      const role = await getProfileRole(data.user)
+      if (role === 'inactive') {
+        await supabase.auth.signOut()
+        setAuthMessage(t('accountInactive'))
+      } else if (role !== 'super_admin') {
         await supabase.auth.signOut()
         setAuthMessage(t('notSuperAdmin'))
       } else {
@@ -1137,8 +1137,11 @@ function App() {
     if (error) {
       setAuthMessage(error.message)
     } else {
-      const role = getRole(data.user)
-      if (role !== 'admin' && role !== 'super_admin') {
+      const role = await getProfileRole(data.user)
+      if (role === 'inactive') {
+        await supabase.auth.signOut()
+        setAuthMessage(t('accountInactive'))
+      } else if (role !== 'admin' && role !== 'super_admin') {
         await supabase.auth.signOut()
         setAuthMessage(t('notAdmin'))
       } else {
@@ -1190,8 +1193,11 @@ function App() {
     if (error) {
       setAuthMessage(error.message)
     } else {
-      const role = getRole(data.user)
-      if (role === 'admin') {
+      const role = await getProfileRole(data.user)
+      if (role === 'inactive') {
+        await supabase.auth.signOut()
+        setAuthMessage(t('accountInactive'))
+      } else if (role === 'admin' || role === 'super_admin') {
         await supabase.auth.signOut()
         setAuthMessage(t('useAdminLogin'))
       } else {

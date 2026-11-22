@@ -20,6 +20,14 @@ create table if not exists public.blocked_users (
   blocked_at timestamptz not null default now()
 );
 
+create table if not exists public.system_settings (
+  key text primary key,
+  value text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.system_settings enable row level security;
+
 create table if not exists public.stock_rounds (
   id bigserial primary key,
   customer_name text,
@@ -52,6 +60,34 @@ create trigger profiles_set_updated_at
 before update on public.profiles
 for each row execute function public.set_updated_at();
 
+create or replace function public.prevent_profile_privilege_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role
+     and not public.is_super_admin()
+  then
+    raise exception 'Forbidden: only Super Admin may change profile roles';
+  end if;
+
+  if new.created_by is distinct from old.created_by
+     and not public.is_super_admin()
+  then
+    raise exception 'Forbidden: only Super Admin may change account ownership';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_profile_privilege_escalation on public.profiles;
+create trigger prevent_profile_privilege_escalation
+before update on public.profiles
+for each row execute function public.prevent_profile_privilege_escalation();
+
 create or replace function public.handle_auth_user_profile()
 returns trigger
 language plpgsql
@@ -63,11 +99,7 @@ declare
   normalized_phone text;
   creator_id uuid;
 begin
-  requested_role := upper(coalesce(
-    new.raw_app_meta_data->>'role',
-    new.raw_user_meta_data->>'role',
-    'USER'
-  ));
+  requested_role := upper(coalesce(new.raw_app_meta_data->>'role', 'USER'));
 
   if requested_role not in ('SUPER_ADMIN', 'ADMIN', 'USER') then
     requested_role := 'USER';
@@ -131,7 +163,7 @@ select
   nullif(trim(coalesce(u.raw_user_meta_data->>'name', '')), ''),
   nullif(regexp_replace(coalesce(u.raw_user_meta_data->>'phone', ''), '\D', '', 'g'), ''),
   case
-    when upper(coalesce(u.raw_app_meta_data->>'role', u.raw_user_meta_data->>'role', '')) = 'SUPER_ADMIN'
+    when upper(coalesce(u.raw_app_meta_data->>'role', '')) = 'SUPER_ADMIN'
       then 'SUPER_ADMIN'
     when upper(coalesce(u.raw_app_meta_data->>'role', u.raw_user_meta_data->>'role', '')) = 'ADMIN'
       then 'ADMIN'

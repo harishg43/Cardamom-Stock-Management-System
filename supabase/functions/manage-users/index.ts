@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
   if (action === 'setup') {
     if (!setupSecret) return json({ error: 'First-time setup is not configured' }, 403)
-    const suppliedSecret = req.headers.get('x-setup-secret') ?? String(body.setup_secret ?? '')
+    const suppliedSecret = req.headers.get('x-setup-secret') ?? ''
     if (suppliedSecret !== setupSecret) return json({ error: 'Invalid setup secret' }, 403)
 
     const { data: existingSuperAdmins, error: superAdminError } = await admin
@@ -51,6 +51,17 @@ Deno.serve(async (req) => {
     if (superAdminError) return json({ error: superAdminError.message }, 500)
     if ((existingSuperAdmins ?? []).length > 0) {
       return json({ error: 'First-time setup is disabled because a Super Admin already exists' }, 403)
+    }
+
+    const { error: claimError } = await admin
+      .from('system_settings')
+      .insert({
+        key: 'first_super_admin_setup',
+        value: 'in_progress',
+        updated_at: new Date().toISOString(),
+      })
+    if (claimError) {
+      return json({ error: 'First-time setup is already in progress or initialized' }, 409)
     }
 
     const email = String(body.email ?? '').trim().toLowerCase()
@@ -67,8 +78,22 @@ Deno.serve(async (req) => {
       app_metadata: { role: 'SUPER_ADMIN' },
       user_metadata: { name, role: 'SUPER_ADMIN' },
     })
-    if (error) return json({ error: error.message }, 400)
+    if (error) {
+      await admin
+        .from('system_settings')
+        .delete()
+        .eq('key', 'first_super_admin_setup')
+      return json({ error: error.message }, 400)
+    }
     if (!data.user) return json({ error: 'Super Admin account was not created' }, 500)
+
+    await admin
+      .from('system_settings')
+      .update({
+        value: 'initialized',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('key', 'first_super_admin_setup')
 
     return json({ ok: true, user_id: data.user.id, role: 'SUPER_ADMIN' })
   }

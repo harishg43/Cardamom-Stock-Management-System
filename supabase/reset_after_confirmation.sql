@@ -20,24 +20,12 @@ begin
     select t.table_name
     from information_schema.tables t
     where t.table_schema = 'public'
-      and t.table_name in (
-        'message_history',
-        'notification_settings',
-        'message_templates',
-        'blocked_users',
-        'stock_rounds',
-        'stocks',
-        'labour',
-        'labour_records',
-        'expenses'
-      )
+      and t.table_type = 'BASE TABLE'
   loop
     execute format('truncate table public.%I restart identity cascade', table_name);
   end loop;
 end
 $$;
-
-delete from public.profiles;
 
 -- Supabase auth users include system/internal users. This is the complete application reset.
 delete from auth.users;
