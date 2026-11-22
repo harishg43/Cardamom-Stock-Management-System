@@ -44,6 +44,18 @@ Admin and regular User accounts must be created through the authenticated app
 flow or the `manage-users` Edge Function. Do not add the setup secret or
 service-role key to Vite environment variables.
 
+## Initial account bootstrap
+
+After RBAC migration, use `supabase/bootstrap_initial_accounts.sql` in the
+Supabase SQL editor if the three Auth users already exist:
+
+- `harishhari3291@gmail.com` — Super Admin
+- `8270153291@user.local` — Admin
+- `9961153291@user.local` — User
+
+Set or reset passwords in Supabase Dashboard > Authentication > Users. Do not
+write passwords into SQL migration or backup scripts.
+
 ## Database backup and reset
 
 Before any reset, run `supabase/backup_before_reset.sql` in the Supabase SQL
