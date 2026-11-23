@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
   const { data: stock, error: stockError } = await caller
     .from('stocks')
-    .select('id, customer_name, customer_phone, stock_date, before_dry_weight, after_dry_weight, user_id, owner_id, admin_id, created_by, stock_reason')
+    .select('id, customer_name, customer_phone, stock_date, before_dry_bags, before_dry_weight, after_dry_bags, after_dry_weight, user_id, owner_id, admin_id, created_by, stock_reason')
     .eq('id', stockId)
     .maybeSingle()
 
@@ -129,8 +129,10 @@ Deno.serve(async (req) => {
     : 'en'
   const date = new Date(`${stock.stock_date}T00:00:00`).toLocaleDateString('en-GB')
   const farmerName = stock.customer_name || farmerProfile?.name || 'Farmer'
-  const beforeQty = Number(stock.before_dry_weight).toFixed(2)
-  const afterQty = Number(stock.after_dry_weight).toFixed(2)
+  const beforeQty = stock.before_dry_weight == null ? 'N/A' : Number(stock.before_dry_weight).toFixed(2)
+  const afterQty = stock.after_dry_weight == null ? 'N/A' : Number(stock.after_dry_weight).toFixed(2)
+  const beforeBags = stock.before_dry_bags == null ? 'N/A' : String(stock.before_dry_bags)
+  const afterBags = stock.after_dry_bags == null ? 'N/A' : String(stock.after_dry_bags)
 
   const templates = await admin
     .from('message_templates')
@@ -147,22 +149,24 @@ Deno.serve(async (req) => {
       .replaceAll('{{farmer_name}}', farmerName)
       .replaceAll('{{before_drying}}', beforeQty)
       .replaceAll('{{after_drying}}', afterQty)
+      .replaceAll('{{before_bags}}', beforeBags)
+      .replaceAll('{{after_bags}}', afterBags)
       .replaceAll('{{date}}', date)
   }
 
   const whatsappFallback =
     language === 'ta'
-      ? `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nசரக்கு வெற்றிகரமாக சேர்க்கப்பட்டது!\n\nவிவசாயி பெயர்: ${farmerName}\nஉலர்க்கும்முன்: ${beforeQty} KG\nஉலர்த்தியபின்: ${afterQty} KG\nதேதி: ${date}\n\nஉங்கள் சரக்கு வெற்றிகரமாக பதிவு செய்யப்பட்டது.`
+      ? `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nசரக்கு வெற்றிகரமாக சேர்க்கப்பட்டது!\n\nவிவசாயி பெயர்: ${farmerName}\nஉலர்க்கும்முன்: ${beforeBags} bags / ${beforeQty} KG\nஉலர்த்தியபின்: ${afterBags} bags / ${afterQty} KG\nதேதி: ${date}\n\nஉங்கள் சரக்கு வெற்றிகரமாக பதிவு செய்யப்பட்டது.`
       : language === 'ml'
-        ? `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nസ്‌റ്റോക്ക് വിജയകരമായി ചേർത്തു!\n\nകർഷകരുടെ പേര്: ${farmerName}\nഉണക്കുന്നതിന് മുമ്പ്: ${beforeQty} KG\nഉണക്കിയ ശേഷം: ${afterQty} KG\nതീയതി: ${date}\n\nനിങ്ങളുടെ സ്‌റ്റോക്ക് വിജയകരമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു.`
-        : `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nStock Added Successfully!\n\nFarmer Name: ${farmerName}\nBefore Drying: ${beforeQty} KG\nAfter Drying: ${afterQty} KG\nDate: ${date}\n\nYour stock entry has been successfully recorded.`
+        ? `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nസ്‌റ്റോക്ക് വിജയകരമായി ചേർത്തു!\n\nകർഷകരുടെ പേര്: ${farmerName}\nഉണക്കുന്നതിന് മുമ്പ്: ${beforeBags} bags / ${beforeQty} KG\nഉണക്കിയ ശേഷം: ${afterBags} bags / ${afterQty} KG\nതീയതി: ${date}\n\nനിങ്ങളുടെ സ്‌റ്റോക്ക് വിജയകരമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു.`
+        : `GURUSAMY CARDAMOM MANAGEMENT SYSTEM\n\nStock Added Successfully!\n\nFarmer Name: ${farmerName}\nBefore Drying: ${beforeBags} bags / ${beforeQty} KG\nAfter Drying: ${afterBags} bags / ${afterQty} KG\nDate: ${date}\n\nYour stock entry has been successfully recorded.`
 
   const smsFallback =
     language === 'ta'
-      ? `Gurusamy Cardamom: சரக்கு வெற்றிகரமாக சேர்க்கப்பட்டது. விவசாயி: ${farmerName} | உலர்க்கும்முன்: ${beforeQty} KG | உலர்த்தியபின்: ${afterQty} KG | தேதி: ${date}.`
+      ? `Gurusamy Cardamom: சரக்கு வெற்றிகரமாக சேர்க்கப்பட்டது. விவசாயி: ${farmerName} | உலர்க்கும்முன்: ${beforeBags} bags / ${beforeQty} KG | உலர்த்தியபின்: ${afterBags} bags / ${afterQty} KG | தேதி: ${date}.`
       : language === 'ml'
-        ? `Gurusamy Cardamom: സ്‌റ്റോക്ക് വിജയകരമായി ചേർത്തു. കർഷകന്‍: ${farmerName} | ഉണക്കുന്നതിന് മുമ്പ്: ${beforeQty} KG | ഉണക്കിയ ശേഷം: ${afterQty} KG | തീയതി: ${date}.`
-        : `Gurusamy Cardamom: Stock added successfully. Farmer: ${farmerName} | Before Drying: ${beforeQty} KG | After Drying: ${afterQty} KG | Date: ${date}.`
+        ? `Gurusamy Cardamom: സ്‌റ്റോക്ക് വിജയകരമായി ചേർത്തു. കർഷകന്‍: ${farmerName} | ഉണക്കുന്നതിന് മുമ്പ്: ${beforeBags} bags / ${beforeQty} KG | ഉണക്കിയ ശേഷം: ${afterBags} bags / ${afterQty} KG | തീയതി: ${date}.`
+        : `Gurusamy Cardamom: Stock added successfully. Farmer: ${farmerName} | Before Drying: ${beforeBags} bags / ${beforeQty} KG | After Drying: ${afterBags} bags / ${afterQty} KG | Date: ${date}.`
 
   const results: Record<string, unknown> = {}
 
@@ -284,6 +288,8 @@ Deno.serve(async (req) => {
           farmer_name: farmerName,
           before_drying: beforeQty,
           after_drying: afterQty,
+          before_bags: beforeBags,
+          after_bags: afterBags,
           date,
         }),
       })

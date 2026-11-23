@@ -18,8 +18,13 @@ function StockList({
     if (!value) {
       return '-'
     }
-
     return new Date(value).toLocaleDateString('en-GB')
+  }
+
+  const formatBagWeight = (bags, weight) => {
+    const bagText = bags == null ? 'Bag count unavailable' : `${bags} bags`
+    const weightText = weight == null ? 'Weight unavailable' : `${Number(weight).toFixed(2)} kg`
+    return `${bagText} / ${weightText}`
   }
 
   const isStockOutRecord = (item) => Boolean(String(item.stockReason ?? '').trim()) || item.afterDryWeight < 0
@@ -128,8 +133,8 @@ function StockList({
                   <td>{formatCustomerName(item.customerName)}</td>
                   <td>{item.customerPhone ?? '-'}</td>
                   <td>{formatDate(item.stockDate)}</td>
-                  <td>{item.beforeDryWeight.toFixed(2)}</td>
-                  <td>{item.afterDryWeight.toFixed(2)}</td>
+                  <td>{formatBagWeight(item.beforeDryBags, item.beforeDryWeight)}</td>
+                  <td>{formatBagWeight(item.afterDryBags, item.afterDryWeight)}</td>
                   <td>{formatRatio(item.dryingRatio)}</td>
                   {showAvailableStock ? <td>{item.availableStock.toFixed(2)}</td> : null}
                   <td>{isStockOutRecord(item) ? t('stockOut') : t('stockIn')}</td>

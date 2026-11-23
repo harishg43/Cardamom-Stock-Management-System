@@ -837,11 +837,14 @@ function App() {
 
   const mapDbRowToStock = (row) => ({
     id: row.id,
+    farmerId: row.owner_id ?? row.user_id ?? '',
     customerName: normalizePersonName(row.customer_name),
     customerPhone: row.customer_phone ?? '',
     stockDate: row.stock_date,
-    beforeDryWeight: Number(row.before_dry_weight),
-    afterDryWeight: Number(row.after_dry_weight),
+    beforeDryBags: row.before_dry_bags == null ? null : Number(row.before_dry_bags),
+    beforeDryWeight: row.before_dry_weight == null ? null : Number(row.before_dry_weight),
+    afterDryBags: row.after_dry_bags == null ? null : Number(row.after_dry_bags),
+    afterDryWeight: row.after_dry_weight == null ? null : Number(row.after_dry_weight),
     dryingRatio: Number(row.drying_ratio),
     availableStock: Number(row.available_stock),
     stockReason: row.stock_reason ?? '',
@@ -865,7 +868,7 @@ function App() {
       const result = await supabase
         .from('stocks')
         .select(
-          'id, customer_name, customer_phone, stock_date, before_dry_weight, after_dry_weight, drying_ratio, available_stock, user_id, owner_id, admin_id, created_by, stock_reason',
+          'id, customer_name, customer_phone, stock_date, before_dry_bags, before_dry_weight, after_dry_bags, after_dry_weight, drying_ratio, available_stock, user_id, owner_id, admin_id, created_by, stock_reason',
         )
         .order('stock_date', { ascending: false })
 
@@ -879,7 +882,9 @@ function App() {
       if (
         error.message.toLowerCase().includes('owner_id') ||
         error.message.toLowerCase().includes('admin_id') ||
-        error.message.toLowerCase().includes('created_by')
+        error.message.toLowerCase().includes('created_by') ||
+        error.message.toLowerCase().includes('before_dry_bags') ||
+        error.message.toLowerCase().includes('after_dry_bags')
       ) {
         const legacyFallback = await supabase
           .from('stocks')
@@ -1037,17 +1042,15 @@ function App() {
       }
 
       const normalizedPhone = normalizePhone(phone)
-      const { data, error } = await supabase
-        .from('blocked_users')
-        .select('id')
-        .eq('phone', normalizedPhone)
-        .limit(1)
+      const { data, error } = await supabase.rpc('is_user_blocked_by_phone', {
+        target_phone: normalizedPhone,
+      })
 
       if (error) {
         return { blocked: false, error }
       }
 
-      return { blocked: (data ?? []).length > 0, error: null }
+      return { blocked: data === true, error: null }
     },
     [normalizePhone],
   )
@@ -1214,6 +1217,24 @@ function App() {
     setAuthLoading(true)
     setAuthMessage('')
 
+    const phoneFromLogin = normalizePhone(userLogin.phone)
+    const blockedStatus = await getBlockedUserByPhone(phoneFromLogin)
+
+    if (blockedStatus.error) {
+      const blockedMessage = blockedStatus.error.message.toLowerCase().includes('is_user_blocked_by_phone')
+        ? t('blockedUsersTableMissing')
+        : blockedStatus.error.message
+      setAuthMessage(blockedMessage)
+      setAuthLoading(false)
+      return
+    }
+
+    if (blockedStatus.blocked) {
+      setAuthMessage(t('deletedUserLoginBlocked'))
+      setAuthLoading(false)
+      return
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: userEmailFromPhone(userLogin.phone),
       password: userLogin.password,
@@ -1230,26 +1251,6 @@ function App() {
         await supabase.auth.signOut()
         setAuthMessage(t('useAdminLogin'))
       } else {
-        const phoneFromLogin = normalizePhone(String(data.user?.user_metadata?.phone ?? userLogin.phone))
-        const blockedStatus = await getBlockedUserByPhone(phoneFromLogin)
-
-        if (blockedStatus.error) {
-          const blockedMessage = blockedStatus.error.message.toLowerCase().includes('blocked_users')
-            ? t('blockedUsersTableMissing')
-            : blockedStatus.error.message
-          await supabase.auth.signOut()
-          setAuthMessage(blockedMessage)
-          setAuthLoading(false)
-          return
-        }
-
-        if (blockedStatus.blocked) {
-          await supabase.auth.signOut()
-          setAuthMessage(t('deletedUserLoginBlocked'))
-          setAuthLoading(false)
-          return
-        }
-
         const enteredName = userLogin.name.trim()
         const metaName = data.user?.user_metadata?.name
         const metaPhone = data.user?.user_metadata?.phone
@@ -1578,7 +1579,14 @@ function App() {
           whatsappConsent: Boolean(account.whatsapp_consent),
           smsConsent: Boolean(account.sms_consent),
         }))
-        .filter((account) => account.id),
+        .filter((account) => account.id)
+        .filter((account, index, accounts) => {
+          const key = `${String(account.name ?? '').trim().toLocaleLowerCase()}::${normalizePhone(account.phone)}`
+          return accounts.findIndex((candidate) =>
+            `${String(candidate.name ?? '').trim().toLocaleLowerCase()}::${normalizePhone(candidate.phone)}`
+            === key
+          ) === index
+        }),
     [managedAccounts],
   )
 
@@ -1751,6 +1759,10 @@ function App() {
           customerPhone: item.customerPhone,
           availableStock: getSignedMovementQuantity(item),
           latestDate: item.stockDate,
+          beforeDryBags: item.beforeDryBags,
+          beforeDryWeight: item.beforeDryWeight,
+          afterDryBags: item.afterDryBags,
+          afterDryWeight: item.afterDryWeight,
         })
         continue
       }
@@ -1758,6 +1770,10 @@ function App() {
       existing.availableStock += getSignedMovementQuantity(item)
       if (candidateTime >= new Date(existing.latestDate).getTime()) {
         existing.latestDate = item.stockDate
+        existing.beforeDryBags = item.beforeDryBags
+        existing.beforeDryWeight = item.beforeDryWeight
+        existing.afterDryBags = item.afterDryBags
+        existing.afterDryWeight = item.afterDryWeight
       }
     }
 
@@ -1789,18 +1805,29 @@ function App() {
       setDbMessage('')
       const normalizedCustomerName = normalizePersonName(payload.customerName)
       const currentAvailable = getLatestAvailableStock(normalizedCustomerName, payload.customerPhone)
-      const nextAvailable = currentAvailable + Number(payload.afterDryWeight)
+      const afterDryDelta = payload.afterDryWeight == null ? 0 : Number(payload.afterDryWeight)
+      const nextAvailable = currentAvailable + afterDryDelta
 
       if (editId) {
+        const existing = stocks.find((item) => item.id === editId)
+        const nextAvailable = existing?.availableStock ?? currentAvailable
         const updatePayload = {
           customer_name: normalizedCustomerName,
           customer_phone: payload.customerPhone,
           stock_date: payload.stockDate,
-          before_dry_weight: payload.beforeDryWeight,
-          after_dry_weight: payload.afterDryWeight,
-          drying_ratio: payload.dryingRatio,
           available_stock: nextAvailable,
         }
+        if (payload.beforeDryBags !== null) updatePayload.before_dry_bags = payload.beforeDryBags
+        if (payload.beforeDryWeight !== null) updatePayload.before_dry_weight = payload.beforeDryWeight
+        if (payload.afterDryBags !== null) updatePayload.after_dry_bags = payload.afterDryBags
+        if (payload.afterDryWeight !== null) updatePayload.after_dry_weight = payload.afterDryWeight
+        const beforeWeight = payload.beforeDryWeight ?? existing?.beforeDryWeight
+        const afterWeight = payload.afterDryWeight ?? existing?.afterDryWeight
+        updatePayload.drying_ratio =
+          Number(beforeWeight) > 0 && afterWeight != null
+            ? (Number(afterWeight) / Number(beforeWeight)) * 100
+            : 0
+        if (payload.farmerId) updatePayload.owner_id = payload.farmerId
         if (hasStockReasonColumn) {
           updatePayload.stock_reason = payload.stockReason ?? ''
         }
@@ -1828,7 +1855,9 @@ function App() {
         customer_name: normalizedCustomerName,
         customer_phone: payload.customerPhone,
         stock_date: payload.stockDate,
+        before_dry_bags: payload.beforeDryBags,
         before_dry_weight: payload.beforeDryWeight,
+        after_dry_bags: payload.afterDryBags,
         after_dry_weight: payload.afterDryWeight,
         drying_ratio: payload.dryingRatio,
         available_stock: nextAvailable,
@@ -1949,7 +1978,9 @@ function App() {
       customerName: normalizedCustomerName,
       customerPhone: payload.customerPhone,
       stockDate: payload.stockDate,
-      beforeDryWeight: afterDryWeight,
+      beforeDryBags: null,
+      beforeDryWeight: null,
+      afterDryBags: payload.afterDryBags,
       afterDryWeight,
       dryingRatio: payload.movementType === 'in' ? 1 : 0,
       availableStock: nextAvailable,
@@ -1967,6 +1998,7 @@ function App() {
         customer_name: movementRecord.customerName,
         customer_phone: movementRecord.customerPhone,
         stock_date: movementRecord.stockDate,
+        after_dry_bags: movementRecord.afterDryBags,
         before_dry_weight: movementRecord.beforeDryWeight,
         after_dry_weight: movementRecord.afterDryWeight,
         drying_ratio: movementRecord.dryingRatio,
@@ -2077,10 +2109,14 @@ function App() {
   const getDayBefore = (isoDate) => {
     const date = new Date(`${isoDate}T00:00:00`)
     date.setDate(date.getDate() - 1)
-    return date.toISOString().slice(0, 10)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10)
+  const today = new Date()
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   const reportScope = useMemo(
     () => (isAdmin ? reportPerson : userScope),
@@ -2183,21 +2219,49 @@ function App() {
       const roundStocks = scopedAndSortedStocks.filter((item) => {
         const itemPhone = normalizePhone(item.customerPhone ?? '')
         const itemName = String(item.customerName ?? '').trim().toLowerCase()
+        const itemDate = String(item.stockDate ?? '').slice(0, 10)
+        const matchesPhone = Boolean(roundPhone && itemPhone && itemPhone === roundPhone)
+        const matchesName = Boolean(
+          roundName &&
+          itemName &&
+          (itemName === roundName || itemName.includes(roundName) || roundName.includes(itemName)),
+        )
+        const matchesPerson = matchesPhone || matchesName
 
         return (
-          item.stockDate >= round.startDate &&
-          item.stockDate <= computedEndDate &&
-          itemPhone === roundPhone &&
-          itemName === roundName
+          itemDate >= String(round.startDate).slice(0, 10) &&
+          itemDate <= String(computedEndDate).slice(0, 10) &&
+          matchesPerson
         )
       })
 
-      const totalBeforeDry = roundStocks.reduce((sum, item) => sum + Number(item.beforeDryWeight ?? 0), 0)
-      const totalAfterDry = roundStocks.reduce((sum, item) => sum + Number(item.afterDryWeight ?? 0), 0)
+      const totalBeforeDry = roundStocks.reduce(
+        (sum, item) => sum + (item.beforeDryWeight == null ? 0 : Math.abs(Number(item.beforeDryWeight) || 0)),
+        0,
+      )
+      const totalAfterDry = roundStocks.reduce(
+        (sum, item) => {
+          if (item.afterDryWeight == null) return sum
+          const quantity = Math.abs(Number(item.afterDryWeight) || 0)
+          const isOut = Boolean(String(item.stockReason ?? '').trim()) || Number(item.afterDryWeight) < 0
+          return sum + (isOut ? -quantity : quantity)
+        },
+        0,
+      )
+      const ratioValues = roundStocks
+        .map((item) => {
+          const beforeWeight = Number(item.beforeDryWeight)
+          const afterWeight = Number(item.afterDryWeight)
+          if (Number.isFinite(beforeWeight) && beforeWeight > 0 && Number.isFinite(afterWeight)) {
+            return (afterWeight / beforeWeight) * 100
+          }
+          return Number(item.dryingRatio)
+        })
+        .filter((ratio) => Number.isFinite(ratio) && ratio > 0)
       const averageRatio =
-        roundStocks.length === 0
+        ratioValues.length === 0
           ? 0
-          : roundStocks.reduce((sum, item) => sum + Number(item.dryingRatio ?? 0), 0) / roundStocks.length
+          : ratioValues.reduce((sum, ratio) => sum + ratio, 0) / ratioValues.length
 
       const personKey = `${roundName}::${roundPhone}`
       const currentRoundNumber = (personRoundCounter.get(personKey) ?? 0) + 1
@@ -3068,6 +3132,8 @@ function App() {
                           <th>{t('name')}</th>
                           <th>{t('phoneNumber')}</th>
                           <th>{t('availableStockColumn')}</th>
+                          <th>Latest Before Dry</th>
+                          <th>Latest After Dry</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -3076,6 +3142,8 @@ function App() {
                             <td>{item.customerName}</td>
                             <td>{item.customerPhone || '-'}</td>
                             <td>{item.availableStock.toFixed(2)}</td>
+                            <td>{item.beforeDryBags == null ? 'Unavailable bags' : `${item.beforeDryBags} bags`} / {item.beforeDryWeight == null ? 'Unavailable weight' : `${Number(item.beforeDryWeight).toFixed(2)} kg`}</td>
+                            <td>{item.afterDryBags == null ? 'Unavailable bags' : `${item.afterDryBags} bags`} / {item.afterDryWeight == null ? 'Unavailable weight' : `${Number(item.afterDryWeight).toFixed(2)} kg`}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -3315,10 +3383,16 @@ function App() {
               {t('searchName')}
               <input
                 type="text"
+                list="stock-history-farmer-options"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t('searchByCustomer')}
               />
+              <datalist id="stock-history-farmer-options">
+                {farmerOptions.map((farmer) => (
+                  <option key={farmer.id} value={farmer.name}>{farmer.phone}</option>
+                ))}
+              </datalist>
             </label>
             <label>
               {t('fromDate')}
@@ -3392,6 +3466,8 @@ function App() {
                     <th>{t('phoneNumber')}</th>
                     <th>{t('date')}</th>
                     <th>{t('movementType')}</th>
+                    <th>Before Dry</th>
+                    <th>After Dry</th>
                     <th>{t('afterDryWeight')}</th>
                     <th>{t('reason')}</th>
                   </tr>
@@ -3403,6 +3479,8 @@ function App() {
                       <td>{item.customerPhone || '-'}</td>
                       <td>{new Date(item.stockDate).toLocaleDateString('en-GB')}</td>
                       <td>{isStockOutRecord(item) ? t('stockOut') : t('stockIn')}</td>
+                      <td>{item.beforeDryBags == null ? 'Unavailable bags' : `${item.beforeDryBags} bags`} / {item.beforeDryWeight == null ? 'Unavailable weight' : `${Number(item.beforeDryWeight).toFixed(2)} kg`}</td>
+                      <td>{item.afterDryBags == null ? 'Unavailable bags' : `${item.afterDryBags} bags`} / {item.afterDryWeight == null ? 'Unavailable weight' : `${Number(item.afterDryWeight).toFixed(2)} kg`}</td>
                       <td>{getSignedMovementQuantity(item).toFixed(2)}</td>
                       <td>{isStockOutRecord(item) ? item.stockReason || '-' : '-'}</td>
                     </tr>

@@ -6,27 +6,61 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Download, FileText } from 'lucide-react'
 
-const toIsoDate = (date) => date.toISOString().slice(0, 10)
+const toIsoDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const getStockDate = (stock) => String(stock?.stockDate ?? '').slice(0, 10)
+
+const isStockOut = (stock) =>
+  Boolean(String(stock?.stockReason ?? '').trim()) || Number(stock?.afterDryWeight ?? 0) < 0
+
+const formatBags = (value) => value == null ? 'Unavailable' : String(value)
+
+const formatWeight = (value) => value == null
+  ? 'Unavailable'
+  : `${Number(value).toFixed(2)} kg`
+
+const formatDryingRatio = (record) => {
+  const beforeWeight = record.beforeDryWeight
+  const afterWeight = record.afterDryWeight
+  if (beforeWeight != null && afterWeight != null && Number(beforeWeight) > 0) {
+    return `${((Number(afterWeight) / Number(beforeWeight)) * 100).toFixed(1)}%`
+  }
+  return 'Unavailable'
+}
 
 function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUserId }) {
   const [reportType, setReportType] = useState('daily')
   const [fromDate, setFromDate] = useState(toIsoDate(new Date()))
   const [toDate, setToDate] = useState(toIsoDate(new Date()))
   const [farmerKey, setFarmerKey] = useState('')
+  const [farmerQuery, setFarmerQuery] = useState('')
   const [stockType, setStockType] = useState('all')
   const [message, setMessage] = useState('')
 
   const farmers = useMemo(() => {
     const map = new Map()
     stocks.forEach((stock) => {
-      const key = `${stock.customerName}|${stock.customerPhone || ''}`
-      if (!map.has(key)) map.set(key, { key, name: stock.customerName, phone: stock.customerPhone || '' })
+      const key = stock.farmerId || `${stock.customerName}|${stock.customerPhone || ''}`
+      if (!map.has(key)) map.set(key, {
+        key,
+        name: stock.customerName,
+        phone: stock.customerPhone || '',
+      })
     })
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [stocks])
 
   const applyPreset = (type) => {
     setReportType(type)
+    if (type === 'stock-in') setStockType('in')
+    else if (type === 'stock-out') setStockType('out')
+    else setStockType('all')
+
     const now = new Date()
     const end = toIsoDate(now)
     let start = end
@@ -52,22 +86,24 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
       return
     }
 
-    let records = stocks.filter((stock) =>
-      stock.stockDate >= fromDate && stock.stockDate <= toDate,
-    )
+    let records = stocks.filter((stock) => {
+      const stockDate = getStockDate(stock)
+      return stockDate >= fromDate && stockDate <= toDate
+    })
     if (farmerKey) {
       const selected = farmers.find((farmer) => farmer.key === farmerKey)
       if (selected) {
-        records = records.filter((stock) =>
-          stock.customerName === selected.name &&
-          (stock.customerPhone || '') === selected.phone,
-        )
+        records = records.filter((stock) => {
+          if (selected.key === (stock.farmerId || '')) return true
+          return stock.customerName === selected.name &&
+            (stock.customerPhone || '') === selected.phone
+        })
       }
     }
     if (stockType === 'in') {
-      records = records.filter((stock) => !stock.stockReason && Number(stock.afterDryWeight) >= 0)
+      records = records.filter((stock) => !isStockOut(stock))
     } else if (stockType === 'out') {
-      records = records.filter((stock) => Boolean(stock.stockReason) || Number(stock.afterDryWeight) < 0)
+      records = records.filter(isStockOut)
     }
 
     const typeTitles = {
@@ -82,18 +118,30 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
     }
     const title = typeTitles[reportType] || 'Stock Report'
     const totalStockAdded = records
-      .filter((stock) => !stock.stockReason && Number(stock.afterDryWeight) >= 0)
+      .filter((stock) => !isStockOut(stock))
       .reduce((sum, stock) => sum + Number(stock.afterDryWeight), 0)
     const totalStockRemoved = records
-      .filter((stock) => Boolean(stock.stockReason) || Number(stock.afterDryWeight) < 0)
+      .filter(isStockOut)
       .reduce((sum, stock) => sum + Math.abs(Number(stock.afterDryWeight)), 0)
-    const balance = stocks
-      .filter((stock) => stock.stockDate <= toDate)
-      .reduce((sum, stock) =>
-        sum + (stock.stockReason || Number(stock.afterDryWeight) < 0
+    let balanceRecords = stocks.filter((stock) => getStockDate(stock) <= toDate)
+    if (farmerKey) {
+      const selected = farmers.find((farmer) => farmer.key === farmerKey)
+      if (selected) {
+        balanceRecords = balanceRecords.filter((stock) =>
+          stock.farmerId
+            ? stock.farmerId === selected.key
+            : stock.customerName === selected.name &&
+              (stock.customerPhone || '') === selected.phone,
+        )
+      }
+    }
+    const balance = balanceRecords.reduce(
+      (sum, stock) =>
+        sum + (isStockOut(stock)
           ? -Math.abs(Number(stock.afterDryWeight))
           : Number(stock.afterDryWeight)),
-      0)
+      0,
+    )
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -132,15 +180,20 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
     doc.text(`Current Stock Balance: ${balance.toFixed(2)} KG`, 590, 92)
 
     const rows = records.map((record) => [
-      new Date(`${record.stockDate}T00:00:00`).toLocaleDateString('en-GB'),
+      new Date(`${getStockDate(record)}T00:00:00`).toLocaleDateString('en-GB'),
       record.customerName,
-      Number(record.beforeDryWeight).toFixed(2),
-      Number(record.afterDryWeight).toFixed(2),
+      formatBags(record.beforeDryBags),
+      formatWeight(record.beforeDryWeight),
+      formatBags(record.afterDryBags),
+      formatWeight(record.afterDryWeight),
+      formatDryingRatio(record),
+      isStockOut(record) ? 'Stock Out' : 'Stock In',
+      isStockOut(record) ? (record.stockReason || '-') : '-',
     ])
 
     autoTable(doc, {
       startY: 108,
-      head: [['Date', 'Farmer Name', 'Before Drying', 'After Drying']],
+      head: [['Date', 'Farmer Name', 'Before Bags', 'Before kg', 'After Bags', 'After kg', 'Drying %', 'Movement', 'Reason']],
       body: rows,
       styles: { fontSize: 9, cellPadding: 6, overflow: 'linebreak' },
       headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255] },
@@ -215,12 +268,25 @@ function ReportsPage({ stocks, isSuperAdmin, roleLabel, generatedBy, currentUser
         <label>To Date<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
         <label>
           Farmer
-          <select value={farmerKey} onChange={(event) => setFarmerKey(event.target.value)}>
-            <option value="">All permitted farmers</option>
+          <input
+            type="text"
+            list="report-farmer-options"
+            value={farmerQuery}
+            placeholder="All permitted farmers"
+            onChange={(event) => {
+              const query = event.target.value
+              setFarmerQuery(query)
+              const exact = farmers.find((farmer) =>
+                farmer.name.trim().toLocaleLowerCase() === query.trim().toLocaleLowerCase()
+              )
+              setFarmerKey(exact?.key ?? '')
+            }}
+          />
+          <datalist id="report-farmer-options">
             {farmers.map((farmer) => (
-              <option key={farmer.key} value={farmer.key}>{farmer.name} ({farmer.phone || '-'})</option>
+              <option key={farmer.key} value={farmer.name}>{farmer.phone || '-'}</option>
             ))}
-          </select>
+          </datalist>
         </label>
         <label>
           Stock Type

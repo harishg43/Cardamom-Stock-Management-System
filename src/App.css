@@ -572,6 +572,84 @@ header p {
   opacity: 0.65;
 }
 
+.bag-weight-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid #b9d4d5;
+  border-radius: 10px;
+}
+
+.bag-weight-section legend {
+  padding: 0 0.35rem;
+  color: #d4ecf6;
+  font-weight: 700;
+}
+
+.farmer-select {
+  position: relative;
+}
+
+.farmer-select-options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 0.1rem);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #b9d4d5;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(15, 77, 76, 0.18);
+}
+
+.farmer-select-options button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 0;
+  border-bottom: 1px solid #e2eeee;
+  border-radius: 0;
+  background: #ffffff;
+  color: #17484d;
+  text-align: left;
+  min-height: 48px;
+  padding: 0.6rem 0.68rem;
+}
+
+.farmer-select-options button:last-child {
+  border-bottom: 0;
+}
+
+.farmer-select-options button:hover,
+.farmer-select-options button[aria-selected='true'] {
+  background: #edf8f6;
+}
+
+.farmer-select-options p {
+  color: #64748b;
+  padding: 0.75rem;
+  margin: 0;
+}
+
+.phone-override-toggle {
+  display: flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  color: #d4ecf6 !important;
+  font-weight: 500 !important;
+}
+
+.phone-override-toggle input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0 0.5rem 0 0;
+}
+
 .stock-form label {
   display: grid;
   gap: 0.35rem;

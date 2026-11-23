@@ -26,6 +26,23 @@ create table if not exists public.system_settings (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.is_user_blocked_by_phone(target_phone text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.blocked_users
+    where phone = regexp_replace(coalesce(target_phone, ''), '\D', '', 'g')
+  );
+$$;
+
+revoke all on function public.is_user_blocked_by_phone(text) from public;
+grant execute on function public.is_user_blocked_by_phone(text) to anon, authenticated;
+
 alter table public.system_settings enable row level security;
 
 create table if not exists public.stock_rounds (
@@ -119,6 +136,11 @@ begin
     raise exception 'A user profile already exists for phone number %', normalized_phone;
   end if;
 
+  if normalized_phone is not null then
+    delete from public.blocked_users
+    where phone = normalized_phone;
+  end if;
+
   if coalesce(new.raw_user_meta_data->>'created_by', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
   then
     creator_id := (new.raw_user_meta_data->>'created_by')::uuid;
@@ -185,6 +207,14 @@ on conflict (id) do update set
   role = excluded.role,
   created_by = coalesce(excluded.created_by, public.profiles.created_by),
   updated_at = now();
+
+delete from public.blocked_users b
+where exists (
+  select 1
+  from public.profiles p
+  where p.phone = b.phone
+    and p.active = true
+);m
 
 create or replace function public.current_profile_role()
 returns text

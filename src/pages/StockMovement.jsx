@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import FarmerSelect from '../components/FarmerSelect'
 
 const initialMovement = {
   farmerId: '',
@@ -6,6 +7,7 @@ const initialMovement = {
   customerPhone: '',
   stockDate: '',
   movementType: 'in',
+  afterDryBags: '',
   afterDryWeight: '',
   reason: '',
   whatsappConsent: false,
@@ -14,6 +16,7 @@ const initialMovement = {
 
 function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) => value }) {
   const [form, setForm] = useState(initialMovement)
+  const [allowPhoneOverride, setAllowPhoneOverride] = useState(false)
 
   const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10)
 
@@ -26,12 +29,18 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
     event.preventDefault()
 
     const afterDryWeight = Number(form.afterDryWeight)
+    const afterDryBags = form.afterDryBags === '' ? null : Number(form.afterDryBags)
+    const hasValidBags =
+      afterDryBags === null ||
+      (Number.isInteger(afterDryBags) && afterDryBags >= 0)
     if (
       !form.customerName.trim() ||
       !/^\d{10}$/.test(form.customerPhone) ||
       !form.stockDate ||
       !Number.isFinite(afterDryWeight) ||
       afterDryWeight <= 0 ||
+      !hasValidBags ||
+      (afterDryBags !== null && afterDryWeight <= 0) ||
       (form.movementType === 'out' && !form.reason.trim())
     ) {
       return
@@ -43,6 +52,7 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
       customerPhone: form.customerPhone,
       stockDate: form.stockDate,
       movementType: form.movementType,
+      afterDryBags,
       afterDryWeight,
       reason: form.reason.trim(),
       whatsappConsent: form.whatsappConsent,
@@ -50,6 +60,7 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
     })
 
     setForm(initialMovement)
+    setAllowPhoneOverride(false)
   }
 
   return (
@@ -57,30 +68,48 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
       {!canManage ? <p className="permission-note">{t('adminOnlyStockNote')}</p> : null}
       <fieldset className="form-fieldset" disabled={!canManage}>
         {farmerOptions.length > 0 ? (
-          <label>
-            {t('customerName')}
-            <select
-              value={form.farmerId}
-              onChange={(event) => {
-                const selected = farmerOptions.find((farmer) => farmer.id === event.target.value)
-                setForm((previous) => ({
-                  ...previous,
-                  farmerId: event.target.value,
-                  customerName: selected?.name || '',
-                  customerPhone: selected?.phone || '',
-                  whatsappConsent: Boolean(selected?.whatsappConsent),
-                  smsConsent: Boolean(selected?.smsConsent),
-                }))
-              }}
-            >
-              <option value="">Select farmer</option>
-              {farmerOptions.map((farmer) => (
-                <option key={farmer.id} value={farmer.id}>
-                  {farmer.name} ({farmer.phone || '-'})
-                </option>
-              ))}
-            </select>
-          </label>
+          <FarmerSelect
+            key={form.farmerId || 'movement-farmer'}
+            farmerOptions={farmerOptions}
+            value={form.farmerId}
+            label={t('customerName')}
+            onChange={(selected) => {
+              setAllowPhoneOverride(false)
+              setForm((previous) => ({
+                ...previous,
+                farmerId: typeof selected === 'object' ? selected.id : '',
+                customerName: typeof selected === 'object' ? selected.name : '',
+                customerPhone: typeof selected === 'object' ? selected.phone : '',
+                whatsappConsent: typeof selected === 'object' ? Boolean(selected.whatsappConsent) : false,
+                smsConsent: typeof selected === 'object' ? Boolean(selected.smsConsent) : false,
+              }))
+            }}
+            disabled={!canManage}
+          />
+        ) : null}
+        {farmerOptions.length === 0 ? (
+          <>
+            <label>
+              {t('customerName')}
+              <input
+                type="text"
+                value={form.customerName}
+                onChange={handleChange('customerName')}
+                placeholder={t('customerName')}
+              />
+            </label>
+            <label>
+              {t('phoneNumber')}
+              <input
+                type="text"
+                value={form.customerPhone}
+                onChange={handleChange('customerPhone')}
+                placeholder="9876543210"
+                inputMode="numeric"
+                maxLength={10}
+              />
+            </label>
+          </>
         ) : null}
         {farmerOptions.length > 0 ? (
           <>
@@ -106,27 +135,32 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
             </label>
           </>
         ) : null}
-        <label>
-          {t('customerName')}
-          <input
-            type="text"
-            value={form.customerName}
-            onChange={handleChange('customerName')}
-            placeholder={t('customerName')}
-          />
-        </label>
-
-        <label>
-          {t('phoneNumber')}
-          <input
-            type="text"
-            value={form.customerPhone}
-            onChange={handleChange('customerPhone')}
-            placeholder="9876543210"
-            inputMode="numeric"
-            maxLength={10}
-          />
-        </label>
+        {farmerOptions.length > 0 ? (
+          <>
+            <label>
+              {t('phoneNumber')}
+              <input
+                type="text"
+                value={form.customerPhone}
+                onChange={handleChange('customerPhone')}
+                placeholder="9876543210"
+                inputMode="numeric"
+                maxLength={10}
+                readOnly={!allowPhoneOverride || !form.farmerId}
+              />
+            </label>
+            {form.farmerId ? (
+              <label className="phone-override-toggle">
+                <input
+                  type="checkbox"
+                  checked={allowPhoneOverride}
+                  onChange={(event) => setAllowPhoneOverride(event.target.checked)}
+                />
+                Edit this stock's phone number only
+              </label>
+            ) : null}
+          </>
+        ) : null}
 
         {!/^\d{10}$/.test(form.customerPhone) && form.customerPhone ? (
           <p className="auth-message">{t('phoneValidation')}</p>
@@ -161,17 +195,31 @@ function StockMovement({ canManage, onSubmit, farmerOptions = [], t = (value) =>
           <p className="auth-message">{t('reasonRequired')}</p>
         ) : null}
 
-        <label>
-          {t('afterDryWeight')}
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.afterDryWeight}
-            onChange={handleChange('afterDryWeight')}
-            placeholder="25"
-          />
-        </label>
+        <fieldset className="bag-weight-section">
+          <legend>After Dry</legend>
+          <label>
+            Number of Bags
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={form.afterDryBags}
+              onChange={handleChange('afterDryBags')}
+              placeholder="4"
+            />
+          </label>
+          <label>
+            {t('afterDryWeight')}
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.afterDryWeight}
+              onChange={handleChange('afterDryWeight')}
+              placeholder="25"
+            />
+          </label>
+        </fieldset>
 
         <div className="actions">
           <button type="submit">{t('submitMovement')}</button>

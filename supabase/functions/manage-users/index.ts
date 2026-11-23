@@ -139,32 +139,94 @@ Deno.serve(async (req) => {
     return json({ error: 'Only Super Admin can create Admin accounts' }, 403)
   }
 
+  const email = `${phone}@user.local`
   const { data: existingProfile } = await admin
     .from('profiles')
-    .select('id')
+    .select('id, role, active, created_by')
     .eq('phone', phone)
     .maybeSingle()
-  if (existingProfile) return json({ error: `A user account already exists for phone number ${phone}` }, 409)
 
-  const email = `${phone}@user.local`
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    app_metadata: { role: requestedRole },
-    user_metadata: {
-      name,
-      phone,
-      role: requestedRole,
-      created_by: callerId,
-    },
-  })
-  if (error) return json({ error: error.message }, 400)
-  if (!data.user) return json({ error: 'Account was not created' }, 500)
+  let createdUserId: string
+
+  if (existingProfile) {
+    if (existingProfile.active) {
+      return json({ error: `A user account already exists for phone number ${phone}` }, 409)
+    }
+
+    const existingRole = String(existingProfile.role ?? '').toUpperCase()
+    if (existingRole === 'SUPER_ADMIN') {
+      return json({ error: 'Super Admin account cannot be recreated' }, 403)
+    }
+    if (existingRole === 'ADMIN' && callerRole !== 'SUPER_ADMIN') {
+      return json({ error: 'Only Super Admin can recreate Admin accounts' }, 403)
+    }
+    if (callerRole === 'ADMIN'
+      && existingRole === 'USER'
+      && existingProfile.created_by !== callerId) {
+      return json({ error: 'Forbidden', 403 })
+    }
+    if (requestedRole !== existingRole) {
+      return json({ error: `Inactive account role is ${existingRole}; requested role is ${requestedRole}`, 409 })
+    }
+
+    const { data: updatedUser, error: updateError } = await admin.auth.admin.updateUserById(
+      String(existingProfile.id),
+      {
+        email,
+        password,
+        email_confirm: true,
+        app_metadata: { role: requestedRole },
+        user_metadata: {
+          name,
+          phone,
+          role: requestedRole,
+          created_by: callerId,
+        },
+      },
+    )
+    if (updateError) return json({ error: updateError.message }, 400)
+    if (!updatedUser.user) return json({ error: 'Account was not restored' }, 500)
+
+    const { error: reactivateError } = await admin
+      .from('profiles')
+      .update({
+        name,
+        role: requestedRole,
+        active: true,
+        created_by: callerId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingProfile.id)
+    if (reactivateError) return json({ error: reactivateError.message }, 500)
+
+    createdUserId = String(updatedUser.user.id)
+  } else {
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: { role: requestedRole },
+      user_metadata: {
+        name,
+        phone,
+        role: requestedRole,
+        created_by: callerId,
+      },
+    })
+    if (error) return json({ error: error.message }, 400)
+    if (!data.user) return json({ error: 'Account was not created' }, 500)
+    createdUserId = String(data.user.id)
+  }
+
+  const { error: unblockError } = await admin
+    .from('blocked_users')
+    .delete()
+    .eq('phone', phone)
+  if (unblockError) return json({ error: unblockError.message }, 500)
 
   return json({
     ok: true,
-    user_id: data.user.id,
+    user_id: createdUserId,
     name,
     phone,
     role: requestedRole,
